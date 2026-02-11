@@ -4,6 +4,7 @@ struct dog {
     char *name_;
 };
 
+
 typedef struct dog dog_t;
 
 const char * const DOG_DEFAULT_NAME = "Boris";

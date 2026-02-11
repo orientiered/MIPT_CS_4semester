@@ -9,3 +9,7 @@ build/dog.o: dog.c dog.h
 
 build/cat.o: cat.c cat.h
 	g++ -c $< -o $@
+
+.PHONY: clean
+clean:
+	rm build/*

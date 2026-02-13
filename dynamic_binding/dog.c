@@ -15,10 +15,6 @@ void dog_init_named(dog_t *c, const char *name) {
 
 }
 
-// void dog_destroy(animal_t *obj) {
-//     animal_destroy(obj);
-// }
-
 void dog_voice(animal_t *obj) {
     printf("%s: Bark\n", obj->name_);
 }

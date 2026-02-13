@@ -49,5 +49,10 @@ int main() {
             obj_destroy(zoo[i]);
       }
 
+      class_destroy(cat_cls);
+      class_destroy(dog_cls);
+      class_destroy(animal_cls);
+      class_destroy(obj_cls);
+
     return 0;
 }

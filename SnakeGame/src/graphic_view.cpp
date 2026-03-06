@@ -14,8 +14,8 @@ void GraphicView::render(const GameModel& model) {
 
 }
 
-GameEvent GraphicView::pollEvent() {
-    return {KeyEvent::EXIT};
+std::optional<GameEvent> GraphicView::pollEvent() {
+    return GameEvent{KeyEvent::EXIT};
 }
 
 GraphicView::GraphicView(uint32_t screen_width, uint32_t screen_height): impl_(std::make_unique<Impl>()) {}

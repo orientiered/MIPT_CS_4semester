@@ -10,7 +10,7 @@ public:
     ~GraphicView();
 
     virtual void render(const GameModel& model) override;
-    virtual GameEvent pollEvent() override;
+    virtual std::optional<GameEvent> pollEvent() override;
 
 private:
     struct Impl;

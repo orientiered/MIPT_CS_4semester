@@ -9,7 +9,7 @@ public:
     AsciiView();
     ~AsciiView();
     void render(const GameModel& model) override;
-    GameEvent pollEvent() override;
+    std::optional<GameEvent> pollEvent() override;
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;

@@ -1,4 +1,5 @@
 #include "ascii_view.h"
+#include <cstring>
 #include <iostream>
 #include <memory>
 #include <ostream>
@@ -9,10 +10,22 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/select.h>
+#include <sys/ioctl.h>
+#include <signal.h>
 
 namespace sngm {
 
 #define TTY_ESC "\033["
+
+/* =================== Terminal window size change handler ==================== */
+
+static bool g_has_window_changed = false;
+
+static void sigWinchHandler(int sig) {
+    g_has_window_changed = true;
+}
+
+/* ================== Implementation struct =================================== */
 
 struct AsciiView::Impl {
     termios old_tty_attr;
@@ -28,6 +41,11 @@ struct AsciiView::Impl {
         FD_ZERO(&read_fds);
         FD_SET(STDIN_FILENO, &read_fds);
 
+        setupTerminal();
+        setupWinchHandler();
+    }
+
+    void setupTerminal() {
         // getting terminal attributes
         termios tty_attr;
         tcgetattr(STDIN_FILENO, &tty_attr);
@@ -42,6 +60,17 @@ struct AsciiView::Impl {
         tcsetattr(STDIN_FILENO, 0, &tty_attr);
 
         hideCursor();
+    }
+
+    void setupWinchHandler() {
+        struct sigaction sa;
+
+        sigemptyset(&sa.sa_mask);
+        sa.sa_flags = 0;
+        sa.sa_handler = sigWinchHandler;
+        if (sigaction(SIGWINCH, &sa, NULL) == -1)
+            std::cerr << "Failed to setup winchHandler\n";
+
     }
 
     void clearScreen();
@@ -63,6 +92,20 @@ struct AsciiView::Impl {
         tcsetattr(STDIN_FILENO, TCSANOW, &old_tty_attr);
     }
 };
+
+
+static std::pair<int, int> getTerminalSize() {
+    struct winsize ws;
+
+    const std::pair<int,int> default_sz = {50, 30};
+
+    if (ioctl(STDOUT_FILENO,TIOCGWINSZ,&ws) < 0) {
+        std::cerr << "Failed to get terminal size\n";
+        return default_sz;
+    }
+
+    return {ws.ws_col, ws.ws_row};
+}
 
 
 /* ============== Drawing primitives ================= */
@@ -163,31 +206,62 @@ void AsciiView::Impl::updateEventBuffer() {
         // std::cout << "processing " << n << " symbols from stdin\n";
     }
 
-    for (int i = 0; i < n; i++) {
-        switch(buffer[i]) {
-            case 'q': case '.':
-                event_buffer.push({KeyEvent::EXIT});
+    struct key_str {
+        std::string str;
+        bool case_sensitive = false;
+    };
+    std::vector<std::pair<key_str, KeyEvent>> keys = {
+        {{"q"}, KeyEvent::EXIT},
+        {{"."}, KeyEvent::EXIT},
+        {{"w"}, KeyEvent::P1_UP},
+        {{"a"}, KeyEvent::P1_LEFT},
+        {{"s"}, KeyEvent::P1_DOWN},
+        {{"d"}, KeyEvent::P1_RIGHT},
+        {{"\033[A", true}, KeyEvent::P2_UP},
+        {{"\033[B", true}, KeyEvent::P2_DOWN},
+        {{"\033[D", true}, KeyEvent::P2_LEFT},
+        {{"\033[C", true}, KeyEvent::P2_RIGHT},
+        {{"\t"}, KeyEvent::PAUSE},
+        {{"r"}, KeyEvent::RESTART}
+    };
+
+    for (int i = 0; i < n; ) {
+        int max_len = n-i;
+        int match_idx = -1;
+        const char *buf_pos = &buffer[i];
+
+        for (int key_idx = 0; key_idx < keys.size(); key_idx++) {
+            const char *str = keys[key_idx].first.str.c_str();
+            const size_t len = keys[key_idx].first.str.size();
+
+            bool case_sens = keys[key_idx].first.case_sensitive;
+
+            if (len > max_len) continue;
+            if ( case_sens && strncmp(str, buf_pos, len) == 0 ||
+                !case_sens && strncasecmp(str, buf_pos, len) == 0) {
+                match_idx = key_idx;
+                i += len;
+                event_buffer.push({keys[key_idx].second});
                 break;
-            case 'w':
-                event_buffer.push({KeyEvent::P1_UP});
-                break;
-            case 'a':
-                event_buffer.push({KeyEvent::P1_LEFT});
-                break;
-            case 's':
-                event_buffer.push({KeyEvent::P1_DOWN});
-                break;
-            case 'd':
-                event_buffer.push({KeyEvent::P1_RIGHT});
-                break;
-            default:
-                break;
+            }
         }
+
+        if (match_idx < 0) i++; // no matches, skipping
     }
 }
 
 std::optional<GameEvent> AsciiView::pollEvent() {
-    impl_->updateEventBuffer();
+    if (g_has_window_changed) {
+        g_has_window_changed = false;
+        auto [wx, wy] = getTerminalSize();
+        impl_->width = wx;
+        impl_->height = wy;
+
+        return GameEvent{WinchEvent{wx, wy}};
+    }
+
+    if (impl_->event_buffer.empty())
+        impl_->updateEventBuffer();
 
     if (!impl_->event_buffer.empty()) {
         GameEvent event = impl_->event_buffer.front();

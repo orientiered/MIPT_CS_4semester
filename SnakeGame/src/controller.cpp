@@ -2,6 +2,7 @@
 #include <chrono>
 #include <iostream>
 #include <thread>
+#include <variant>
 
 namespace sngm {
 
@@ -22,13 +23,18 @@ void GameController::run() {
 }
 
 void GameController::processEvent(const GameEvent& event) {
-    switch (event.key) {
-        case KeyEvent::EXIT:
-            exit_request = true;
-            break;
-
-        default:
-            break;
+    if (event.is<KeyEvent>()) {
+        KeyEvent key = event.get<KeyEvent>();
+        switch (key) {
+            case KeyEvent::EXIT:
+                exit_request = true;
+                break;
+            default:
+                break;
+        }
+    } else if (event.is<WinchEvent>()) {
+        WinchEvent ws = event.get<WinchEvent>();
+        // std::cout << ws.height << ws.width
     }
 }
 

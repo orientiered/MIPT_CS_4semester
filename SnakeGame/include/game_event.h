@@ -1,5 +1,6 @@
 #pragma once
 
+#include <variant>
 namespace sngm {
 
 enum class KeyEvent {
@@ -18,8 +19,25 @@ enum class KeyEvent {
     EXIT
 };
 
+struct WinchEvent {
+    int width;
+    int height;
+};
+
 struct GameEvent {
-    KeyEvent key;
+    std::variant<KeyEvent, WinchEvent> data_;
+
+    template<typename T>
+    bool is() const { return std::get_if<T>(&data_) != nullptr; }
+
+    template<typename T>
+    T& get() { return std::get<T>(data_); }
+
+    template<typename T>
+    const T& get() const { return std::get<T>(data_); }
+
 };
 
 }
+
+

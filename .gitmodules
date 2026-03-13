@@ -1,0 +1,3 @@
+[submodule "AudioEditor/lib_deps/ImGuiFileDialog"]
+	path = AudioEditor/lib_deps/ImGuiFileDialog
+	url = https://github.com/aiekick/ImGuiFileDialog

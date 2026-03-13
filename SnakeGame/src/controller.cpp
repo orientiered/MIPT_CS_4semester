@@ -15,8 +15,11 @@ void GameController::run() {
             processEvent(*event);
         }
 
+        if (!is_paused)
+            model.tickStep();
+
         view.render(model);
-        std::this_thread::sleep_for(16ms);
+        std::this_thread::sleep_for(32ms);
     }
 
 
@@ -28,6 +31,21 @@ void GameController::processEvent(const GameEvent& event) {
         switch (key) {
             case KeyEvent::EXIT:
                 exit_request = true;
+                break;
+            case KeyEvent::P1_UP:
+                model.setP1SnakeDir(Direction::UP);
+                break;
+            case KeyEvent::P1_DOWN:
+                model.setP1SnakeDir(Direction::DOWN);
+                break;
+            case KeyEvent::P1_LEFT:
+                model.setP1SnakeDir(Direction::LEFT);
+                break;
+            case KeyEvent::P1_RIGHT:
+                model.setP1SnakeDir(Direction::RIGHT);
+                break;
+            case KeyEvent::PAUSE:
+                is_paused = !is_paused;
                 break;
             default:
                 break;

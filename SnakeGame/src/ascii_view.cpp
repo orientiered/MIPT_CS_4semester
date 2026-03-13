@@ -19,7 +19,7 @@ namespace sngm {
 
 /* =================== Terminal window size change handler ==================== */
 
-static bool g_has_window_changed = false;
+static bool g_has_window_changed = false; // used in pollEvent
 
 static void sigWinchHandler(int sig) {
     g_has_window_changed = true;
@@ -27,13 +27,32 @@ static void sigWinchHandler(int sig) {
 
 /* ================== Implementation struct =================================== */
 
+static std::pair<int, int> getTerminalSize() {
+    struct winsize ws;
+
+    const std::pair<int,int> default_sz = {50, 30};
+
+    if (ioctl(STDOUT_FILENO,TIOCGWINSZ,&ws) < 0) {
+        std::cerr << "Failed to get terminal size\n";
+        return default_sz;
+    }
+
+    return {ws.ws_col, ws.ws_row};
+}
+
 struct AsciiView::Impl {
     termios old_tty_attr;
     fd_set read_fds;
 
     std::queue<GameEvent> event_buffer;
 
-    int width = 50, height = 30;
+    int tty_width = 50, tty_height = 30;
+
+    const int height_bound = 2;
+    const int width_bound = 2;
+
+    int field_width = tty_width - width_bound, field_height = tty_height - height_bound;
+    int field_start_x = 1, field_start_y = 1;
 
 
     Impl() {
@@ -43,6 +62,9 @@ struct AsciiView::Impl {
 
         setupTerminal();
         setupWinchHandler();
+
+        auto [new_tty_width, new_tty_height] = getTerminalSize();
+        updateTerminalSize(new_tty_width, new_tty_height);
     }
 
     void setupTerminal() {
@@ -75,6 +97,7 @@ struct AsciiView::Impl {
 
     void clearScreen();
     void gotoXY(int x, int y);
+    void gotoFieldXY(int x, int y);
 
     void setBgColor(int col_idx);
     void setFgColor(int col_idx);
@@ -84,28 +107,16 @@ struct AsciiView::Impl {
     void showCursor();
 
     void updateEventBuffer();
+    void updateTerminalSize(int wx, int wy);
 
     void drawBox();
+    void drawSnake(const Snake& snake);
 
     ~Impl() {
         showCursor();
         tcsetattr(STDIN_FILENO, TCSANOW, &old_tty_attr);
     }
 };
-
-
-static std::pair<int, int> getTerminalSize() {
-    struct winsize ws;
-
-    const std::pair<int,int> default_sz = {50, 30};
-
-    if (ioctl(STDOUT_FILENO,TIOCGWINSZ,&ws) < 0) {
-        std::cerr << "Failed to get terminal size\n";
-        return default_sz;
-    }
-
-    return {ws.ws_col, ws.ws_row};
-}
 
 
 /* ============== Drawing primitives ================= */
@@ -116,6 +127,10 @@ void AsciiView::Impl::clearScreen() {
 
 void AsciiView::Impl::gotoXY(int x, int y) {
     printf(TTY_ESC"%d;%dH", y+1, x+1);
+}
+
+void AsciiView::Impl::gotoFieldXY(int x, int y) {
+    gotoXY(x + field_start_x, field_height - 1 - y + field_start_y);
 }
 
 void AsciiView::Impl::hideCursor() {
@@ -146,40 +161,90 @@ void AsciiView::Impl::drawBox() {
     int box_col = 110;
 
     setFgColor(box_col);
-    for (int i = 0; i < width; i++) {
+    for (int i = 0; i < tty_width; i++) {
         if (i == 0) printf("┌");
-        else if (i == width-1) printf("┐");
+        else if (i == tty_width-1) printf("┐");
         else printf("─");
     }
 
     const int title_len = 7;
-    gotoXY((width-title_len) / 2, 0);
+    gotoXY((tty_width-title_len) / 2, 0);
     setFgColor(162);
     printf(" Snake ");
 
     setFgColor(box_col);
 
-    for (int y = 1; y < height-1; y++) {
+    for (int y = 1; y < tty_height-1; y++) {
         gotoXY(0, y);
         printf("│");
-        gotoXY(width-1, y);
+        gotoXY(tty_width-1, y);
         printf("│");
     }
 
-    gotoXY(0, height-1);
-    for (int i = 0; i < width; i++) {
+    gotoXY(0, tty_height-1);
+    for (int i = 0; i < tty_width; i++) {
         if (i == 0) printf("└");
-        else if (i == width-1) printf("┘");
+        else if (i == tty_width-1) printf("┘");
         else printf("─");
     }
 }
 
+void AsciiView::Impl::drawSnake(const Snake& snake) {
+    setFgColor(130);
+
+    const std::list<Coord>& body = snake.body;
+    Coord head = body.front();
+
+    const char* head_string = "^";
+    switch(snake.direction) {
+        case Direction::UP:
+            head_string = "🠝";
+            break;
+        case Direction::DOWN:
+            head_string = "🠟";
+            break;
+        case Direction::RIGHT:
+            head_string = "🠞";
+            break;
+        case Direction::LEFT:
+            head_string = "🠜";
+            break;
+    }
+
+    gotoFieldXY(head.x, head.y);
+    printf("%s", head_string);
+
+    auto body_iter = body.begin();
+    body_iter++;
+
+    while (body_iter != body.end()) {
+
+        gotoFieldXY(body_iter->x, body_iter->y);
+        printf("#");
+        body_iter++;
+    }
+}
 
 void AsciiView::render(const GameModel& model) {
     impl_->clearScreen();
     impl_->drawBox();
+
+    for (const Snake& snake: model.snakes) {
+        impl_->drawSnake(snake);
+    }
+
     std::cout << std::flush;
 }
+
+/* ================================================== */
+
+void AsciiView::Impl::updateTerminalSize(int wx, int wy) {
+    tty_width = wx;
+    tty_height = wy;
+    field_width = tty_width - width_bound;
+    field_height = tty_height - height_bound;
+}
+
 
 void AsciiView::Impl::updateEventBuffer() {
     timeval timeout = {0, 0};
@@ -253,9 +318,9 @@ void AsciiView::Impl::updateEventBuffer() {
 std::optional<GameEvent> AsciiView::pollEvent() {
     if (g_has_window_changed) {
         g_has_window_changed = false;
+
         auto [wx, wy] = getTerminalSize();
-        impl_->width = wx;
-        impl_->height = wy;
+        impl_->updateTerminalSize(wx, wy);
 
         return GameEvent{WinchEvent{wx, wy}};
     }

@@ -11,7 +11,9 @@ class GameController {
 private:
     GameModel &model;
     IView &view;
+
     std::chrono::steady_clock clock;
+    bool is_paused = false;
     bool exit_request = false;
     // std::chrono::duration<double> ;
 public:

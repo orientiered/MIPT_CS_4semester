@@ -1,3 +1,6 @@
 [submodule "AudioEditor/lib_deps/ImGuiFileDialog"]
 	path = AudioEditor/lib_deps/ImGuiFileDialog
 	url = https://github.com/aiekick/ImGuiFileDialog
+[submodule "AudioEditor/lib_deps/plog"]
+	path = AudioEditor/lib_deps/plog
+	url = https://github.com/SergiusTheBest/plog.git

@@ -3,10 +3,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <utility>
+
+#include "coords.h"
+
 namespace sngm {
 
+
 class Rabbit {
-    std::pair<int32_t, int32_t> pos;
+public:
+    Coord pos;
 
 };
 

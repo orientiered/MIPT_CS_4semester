@@ -3,11 +3,18 @@
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <map>
+#include <set>
 
 #include "snake.h"
 #include "rabbit.h"
 
+#include "simple_random.h"
+
 namespace sngm {
+
+enum CellType {SnakeBodyType, SnakeHeadType, RabbitType, WallType, EmptyType};
+
 
 class GameModel {
 public:
@@ -17,17 +24,33 @@ public:
     std::deque<Snake> snakes;
     std::deque<Rabbit> rabbits;
 
+    static inline const int MIN_WIDTH = 40;
+    static inline const int MIN_HEIGHT = 20;
+
     int controllable_snakes = 1;
     static inline const uint16_t MAX_CONTROLLABLE_SNAKES = 2;
     int bot_snakes = 0;
     static inline const uint16_t MAX_BOT_SNAKES = 10;
 
+    uint16_t max_rabbit_count = 3;
+    uint16_t max_rabbit_spawn_tries = 1;
+
+    FastRng rng;
+
     void tickStep();
+
     void setPlayerSnakeDir(int snakeId, Direction dir) {
         if (snakeId < controllable_snakes)
             snakes[snakeId].direction = dir;
     }
 private:
+
+    void spawnRabbits();
+
+    std::map<Coord, CellType> buildOccupiedCells();
+
+    // CellObj checkCoord(Coord pos);
+
     void spawnDefaultSnake(Coord offset, Direction dir = Direction::RIGHT);
 
 };

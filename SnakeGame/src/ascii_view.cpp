@@ -130,6 +130,7 @@ struct AsciiView::Impl {
 
     void drawBox();
     void drawSnake(const Snake& snake);
+    void drawRabbit(const Rabbit& rabbit);
 
     ~Impl() {
         showCursor();
@@ -244,6 +245,14 @@ void AsciiView::Impl::drawSnake(const Snake& snake) {
     }
 }
 
+void AsciiView::Impl::drawRabbit(const Rabbit& rabbit) {
+    setFgColor(225);
+
+    gotoFieldXY(rabbit.pos.x, rabbit.pos.y);
+    printf("🤑");
+    // printf("*");
+}
+
 void AsciiView::render(const GameModel& model) {
     impl_->clearScreen();
     impl_->drawBox();
@@ -251,6 +260,10 @@ void AsciiView::render(const GameModel& model) {
     impl_->snakeColor.reset();
     for (const Snake& snake: model.snakes) {
         impl_->drawSnake(snake);
+    }
+
+    for (const Rabbit& rabbit: model.rabbits) {
+        impl_->drawRabbit(rabbit);
     }
 
     std::cout << std::flush;

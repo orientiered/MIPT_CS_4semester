@@ -6,6 +6,16 @@ enum class Direction {UP, RIGHT, DOWN, LEFT};
 struct Coord {
     int32_t x;
     int32_t y;
+
+    bool operator==(const Coord& other) const {
+        return x == other.x && y == other.y;
+    }
+
+    bool operator<(const Coord& other) const {
+        if (x < other.x) return true;
+        if (x == other.x) return y < other.y;
+        return false;
+    }
 };
 
 inline Coord& operator+=(Coord& c, const Coord other) {
@@ -20,6 +30,7 @@ inline Coord operator+(const Coord& a, const Coord& b) {
     result += b;
     return result;
 }
+
 
 inline Coord& operator+=(Coord& c, const Direction& dir) {
     switch (dir) {

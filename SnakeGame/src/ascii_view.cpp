@@ -40,6 +40,22 @@ static std::pair<int, int> getTerminalSize() {
     return {ws.ws_col, ws.ws_row};
 }
 
+template<typename Color>
+struct ColorPalettePicker {
+    std::vector<Color> palette;
+    int idx = 0;
+
+    ColorPalettePicker(std::vector<Color> p): palette(p) {}
+
+    Color get() {
+        Color c = palette[idx];
+        idx = (idx + 1) % palette.size();
+        return c;
+    }
+
+    void reset() { idx = 0; }
+};
+
 struct AsciiView::Impl {
     termios old_tty_attr;
     fd_set read_fds;
@@ -54,8 +70,11 @@ struct AsciiView::Impl {
     int field_width = tty_width - width_bound, field_height = tty_height - height_bound;
     int field_start_x = 1, field_start_y = 1;
 
+    const std::vector<int> snakePalette{112, 133, 172, 196, 27, 12, 215};
+    ColorPalettePicker<int> snakeColor;
 
-    Impl() {
+    Impl(): snakeColor(snakePalette) {
+
         //Initializing fd set for select
         FD_ZERO(&read_fds);
         FD_SET(STDIN_FILENO, &read_fds);
@@ -190,7 +209,7 @@ void AsciiView::Impl::drawBox() {
 }
 
 void AsciiView::Impl::drawSnake(const Snake& snake) {
-    setFgColor(130);
+    setFgColor(snakeColor.get());
 
     const std::list<Coord>& body = snake.body;
     Coord head = body.front();
@@ -229,6 +248,7 @@ void AsciiView::render(const GameModel& model) {
     impl_->clearScreen();
     impl_->drawBox();
 
+    impl_->snakeColor.reset();
     for (const Snake& snake: model.snakes) {
         impl_->drawSnake(snake);
     }

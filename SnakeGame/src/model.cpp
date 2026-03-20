@@ -1,4 +1,5 @@
 #include "model.h"
+#include <string>
 
 namespace sngm {
 
@@ -7,10 +8,9 @@ void GameModel::spawnDefaultSnake(Coord offset, Direction dir) {
     snakes.push_back(Snake{body, dir});
 }
 
-GameModel::GameModel(int32_t width_, int32_t height_, uint16_t spawn_controlled, uint16_t spawn_bot):
-    width(std::max(MIN_WIDTH, width_)),
-    height(std::max(MIN_HEIGHT, height_))
+GameModel::GameModel(int32_t width_, int32_t height_, uint16_t spawn_controlled, uint16_t spawn_bot)
 {
+    resize(width_, height_);
     controllable_snakes = std::min(spawn_controlled, MAX_CONTROLLABLE_SNAKES);
 
     for (int i = 0; i < controllable_snakes; i++) {
@@ -63,12 +63,32 @@ void GameModel::spawnRabbits() {
 }
 
 void GameModel::tickStep() {
+    if (!isValid()) return;
 
     for (Snake& snake: snakes) {
         snake.step();
     }
 
     spawnRabbits();
+}
+
+bool GameModel::isValid() const {
+    return isValidSize;
+}
+
+const std::string_view GameModel::getErrorString() const {
+    return error_string;
+}
+
+void GameModel::resize(int32_t new_width, int32_t new_height) {
+    if (new_width < MIN_WIDTH || new_height < MIN_HEIGHT) {
+        isValidSize = false;
+        error_string = "Minimal size is " + std::to_string(MIN_WIDTH) + " x " + std::to_string(MIN_HEIGHT);
+    } else {
+        isValidSize = true;
+        width = new_width;
+        height = new_height;
+    }
 }
 
 }

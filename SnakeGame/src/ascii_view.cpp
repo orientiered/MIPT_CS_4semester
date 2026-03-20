@@ -1,4 +1,5 @@
 #include "ascii_view.h"
+#include <cassert>
 #include <cstring>
 #include <iostream>
 #include <memory>
@@ -70,6 +71,7 @@ struct AsciiView::Impl {
     int field_width = tty_width - width_bound, field_height = tty_height - height_bound;
     int field_start_x = 1, field_start_y = 1;
 
+
     const std::vector<int> snakePalette{112, 133, 172, 196, 27, 12, 215};
     ColorPalettePicker<int> snakeColor;
 
@@ -126,9 +128,10 @@ struct AsciiView::Impl {
     void showCursor();
 
     void updateEventBuffer();
-    void updateTerminalSize(int wx, int wy);
+    WinchEvent updateTerminalSize(int wx, int wy);
 
     void drawBox();
+    void drawMiddleText(const char *text);
     void drawSnake(const Snake& snake);
     void drawRabbit(const Rabbit& rabbit);
 
@@ -175,6 +178,16 @@ void AsciiView::Impl::clearColor() {
 
 // ============================================
 
+void AsciiView::Impl::drawMiddleText(const char *text) {
+    assert(text);
+    setFgColor(0);
+
+    const size_t textLen = strlen(text);
+    gotoXY(tty_width/2 - textLen/2, tty_height/2);
+
+    printf("%s", text);
+}
+
 void AsciiView::Impl::drawBox() {
     gotoXY(0, 0);
 
@@ -211,6 +224,7 @@ void AsciiView::Impl::drawBox() {
 
 void AsciiView::Impl::drawSnake(const Snake& snake) {
     setFgColor(snakeColor.get());
+    if (!snake.isAlive) return;
 
     const std::list<Coord>& body = snake.body;
     Coord head = body.front();
@@ -253,29 +267,38 @@ void AsciiView::Impl::drawRabbit(const Rabbit& rabbit) {
     // printf("*");
 }
 
+
+
 void AsciiView::render(const GameModel& model) {
     impl_->clearScreen();
     impl_->drawBox();
 
-    impl_->snakeColor.reset();
-    for (const Snake& snake: model.snakes) {
-        impl_->drawSnake(snake);
-    }
+    if (model.isValid()) {
 
-    for (const Rabbit& rabbit: model.rabbits) {
-        impl_->drawRabbit(rabbit);
-    }
+        impl_->snakeColor.reset();
+        for (const Snake& snake: model.snakes) {
+            impl_->drawSnake(snake);
+        }
 
+        for (const Rabbit& rabbit: model.rabbits) {
+            impl_->drawRabbit(rabbit);
+        }
+
+    } else {
+        impl_->drawMiddleText(model.getErrorString().data());
+    }
     std::cout << std::flush;
 }
 
 /* ================================================== */
 
-void AsciiView::Impl::updateTerminalSize(int wx, int wy) {
+WinchEvent AsciiView::Impl::updateTerminalSize(int wx, int wy) {
     tty_width = wx;
     tty_height = wy;
     field_width = tty_width - width_bound;
     field_height = tty_height - height_bound;
+
+    return WinchEvent{field_width, field_height};
 }
 
 
@@ -353,9 +376,8 @@ std::optional<GameEvent> AsciiView::pollEvent() {
         g_has_window_changed = false;
 
         auto [wx, wy] = getTerminalSize();
-        impl_->updateTerminalSize(wx, wy);
+        return GameEvent{impl_->updateTerminalSize(wx, wy)};
 
-        return GameEvent{WinchEvent{wx, wy}};
     }
 
     if (impl_->event_buffer.empty())

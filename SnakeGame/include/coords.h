@@ -2,6 +2,13 @@
 #include <cstdint>
 
 enum class Direction {UP, RIGHT, DOWN, LEFT};
+inline bool isOppositeDireciton(Direction a, Direction b) {
+    return a == Direction::UP && b == Direction::DOWN ||
+           a == Direction::DOWN && b == Direction::UP ||
+           a == Direction::LEFT && b == Direction::RIGHT ||
+           a == Direction::RIGHT && b == Direction::LEFT;
+}
+
 
 struct Coord {
     int32_t x;

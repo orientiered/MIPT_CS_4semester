@@ -5,6 +5,8 @@
 #include <deque>
 #include <map>
 #include <set>
+#include <string>
+#include <vector>
 
 #include "snake.h"
 #include "rabbit.h"
@@ -41,9 +43,20 @@ public:
 
     void setPlayerSnakeDir(int snakeId, Direction dir) {
         if (snakeId < controllable_snakes)
-            snakes[snakeId].direction = dir;
+            snakes[snakeId].setDirection(dir);
     }
+
+
+    /// @brief Get error description if model is not valid
+    const std::string_view getErrorString() const;
+
+    bool isValid() const;
+
+    // Try to resize model to new_width x new_height
+    void resize(int32_t new_width, int32_t new_height);
 private:
+    bool isValidSize = true;
+    std::string error_string;
 
     void spawnRabbits();
 

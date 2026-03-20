@@ -73,7 +73,7 @@ void GameController::processEvent(const GameEvent& event) {
         }
     } else if (event.is<WinchEvent>()) {
         WinchEvent ws = event.get<WinchEvent>();
-        // std::cout << ws.height << ws.width
+        model.resize(ws.width, ws.height);
     }
 }
 

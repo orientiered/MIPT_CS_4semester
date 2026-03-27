@@ -8,5 +8,9 @@ void Snake::step() {
     body.push_front(body.front() + direction);
 }
 
+void Snake::grow() {
+    if (!isAlive) return;
+    body.push_front(body.front() + direction);
+}
 
 }

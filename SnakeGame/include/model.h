@@ -15,16 +15,21 @@
 
 namespace sngm {
 
-enum CellType {SnakeBodyType, SnakeHeadType, RabbitType, WallType, EmptyType};
-
+//EmptyType must be zero for default construction
+enum CellType {EmptyType = 0, SnakeBodyType, SnakeHeadType, RabbitType, WallType};
 
 class GameModel {
 public:
     GameModel(int32_t width_, int32_t height_, uint16_t spawn_controlled = 1, uint16_t spawn_bot = 0);
 
     int32_t width, height;
-    std::deque<Snake> snakes;
-    std::deque<Rabbit> rabbits;
+
+    const std::deque<Snake>& getSnakes() const {
+        return snakes;
+    }
+    const std::deque<Rabbit>& getRabbits() const {
+        return rabbits;
+    }
 
     static inline const int MIN_WIDTH = 40;
     static inline const int MIN_HEIGHT = 20;
@@ -55,6 +60,9 @@ public:
     // Try to resize model to new_width x new_height
     void resize(int32_t new_width, int32_t new_height);
 private:
+    std::deque<Snake> snakes;
+    std::deque<Rabbit> rabbits;
+
     bool isValidSize = true;
     std::string error_string;
 
@@ -62,6 +70,7 @@ private:
 
     std::map<Coord, CellType> buildOccupiedCells();
 
+    void kill_rabbit(Coord c);
     // CellObj checkCoord(Coord pos);
 
     void spawnDefaultSnake(Coord offset, Direction dir = Direction::RIGHT);

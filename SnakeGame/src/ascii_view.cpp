@@ -263,7 +263,7 @@ void AsciiView::Impl::drawRabbit(const Rabbit& rabbit) {
     setFgColor(225);
 
     gotoFieldXY(rabbit.pos.x, rabbit.pos.y);
-    printf("🤑");
+    printf("@");
     // printf("*");
 }
 
@@ -276,11 +276,11 @@ void AsciiView::render(const GameModel& model) {
     if (model.isValid()) {
 
         impl_->snakeColor.reset();
-        for (const Snake& snake: model.snakes) {
+        for (const Snake& snake: model.getSnakes()) {
             impl_->drawSnake(snake);
         }
 
-        for (const Rabbit& rabbit: model.rabbits) {
+        for (const Rabbit& rabbit: model.getRabbits()) {
             impl_->drawRabbit(rabbit);
         }
 

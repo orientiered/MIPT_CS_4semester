@@ -14,7 +14,7 @@ GameModel::GameModel(int32_t width_, int32_t height_, uint16_t spawn_controlled,
     controllable_snakes = std::min(spawn_controlled, MAX_CONTROLLABLE_SNAKES);
 
     for (int i = 0; i < controllable_snakes; i++) {
-        spawnDefaultSnake({height * (i+1) / (controllable_snakes + 1), 0});
+        spawnDefaultSnake({0, height * (i+1) / (controllable_snakes + 1)});
     }
 
     bot_snakes = std::min(spawn_bot, MAX_BOT_SNAKES);
@@ -55,21 +55,55 @@ void GameModel::spawnRabbits() {
         int x = rng.range(0, width);
         int y = rng.range(0, height);
         if (occupied_cells.find(Coord{x, y}) == occupied_cells.end()) {
-            rabbits.push_back(Rabbit({x, y}));
+            rabbits.push_back(Rabbit{x, y});
             occupied_cells[{x,y}] = RabbitType;
             able_to_spawn--;
         }
     }
 }
 
+void GameModel::kill_rabbit(Coord c) {
+    for (auto rabbit_it = rabbits.begin(); rabbit_it != rabbits.end(); rabbit_it++) {
+        if (rabbit_it->pos == c) {
+            rabbits.erase(rabbit_it);
+            break;
+        }
+    }
+}
+
+
 void GameModel::tickStep() {
     if (!isValid()) return;
 
-    for (Snake& snake: snakes) {
-        snake.step();
+
+    if (snakes.size() == 0) {
+        //TODO: game over + score
     }
 
     spawnRabbits();
+
+    auto occupied_cells = buildOccupiedCells();
+
+    for (Snake& snake: snakes) {
+        if (!snake.isAlive) continue;
+        Coord nextCell = snake.getNextCell();
+        switch(occupied_cells[nextCell]) {
+            case SnakeBodyType:
+            case SnakeHeadType:
+                snake.kill();
+                break;
+            case EmptyType:
+                snake.step();
+                break;
+            case RabbitType:
+                snake.grow();
+                kill_rabbit(nextCell);
+                break;
+            default:
+                break;
+        }
+    }
+
 }
 
 bool GameModel::isValid() const {

@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <deque>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -17,6 +18,18 @@ namespace sngm {
 
 //EmptyType must be zero for default construction
 enum CellType {EmptyType = 0, SnakeBodyType, SnakeHeadType, RabbitType, WallType};
+
+class GameModel;
+
+class ISnakeBot {
+protected:
+    ISnakeBot(Snake& snake): controlled(&snake) {}
+public:
+    Snake *controlled;
+    virtual void tick(GameModel &model) = 0;
+
+    virtual ~ISnakeBot() = default;
+};
 
 class GameModel {
 public:
@@ -63,6 +76,8 @@ private:
     std::deque<Snake> snakes;
     std::deque<Rabbit> rabbits;
 
+    std::vector<std::unique_ptr<ISnakeBot>> bot_controllers;
+
     bool isValidSize = true;
     std::string error_string;
 
@@ -73,7 +88,14 @@ private:
     void kill_rabbit(Coord c);
     // CellObj checkCoord(Coord pos);
 
-    void spawnDefaultSnake(Coord offset, Direction dir = Direction::RIGHT);
+    Snake& spawnDefaultSnake(Coord offset, Direction dir = Direction::RIGHT);
+
+    template <typename SnakeBotT>
+    Snake& spawnSnakeBot() {
+        Snake& new_bot = spawnDefaultSnake(Coord{rng.range(0, width), rng.range(0, height)});
+        bot_controllers.push_back(std::make_unique<SnakeBotT>(new_bot));
+        return new_bot;
+    }
 
 };
 

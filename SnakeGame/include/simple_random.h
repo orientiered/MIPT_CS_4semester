@@ -24,7 +24,7 @@ public:
         return static_cast<uint32_t>(result);
     }
 
-    uint32_t range(uint32_t min, uint32_t max) {
+    int32_t range(int32_t min, int32_t max) {
         return min + next() % (max - min + 1);
     }
 

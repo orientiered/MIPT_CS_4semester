@@ -6,7 +6,7 @@
 
 int main(int argc, const char *argv[]) {
 
-    sngm::GameModel model(40, 30, 2);
+    sngm::GameModel model(40, 30, 0, 5);
 
     sngm::AsciiView view;
 

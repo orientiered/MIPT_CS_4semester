@@ -1,14 +1,21 @@
 #pragma once
 #include <cstdint>
 
-enum class Direction {UP, RIGHT, DOWN, LEFT};
-inline bool isOppositeDireciton(Direction a, Direction b) {
+enum class Direction {NONE, UP, RIGHT, DOWN, LEFT};
+inline bool isOppositeDirection(Direction a, Direction b) {
     return a == Direction::UP && b == Direction::DOWN ||
            a == Direction::DOWN && b == Direction::UP ||
            a == Direction::LEFT && b == Direction::RIGHT ||
            a == Direction::RIGHT && b == Direction::LEFT;
 }
 
+inline Direction directionRotate90(Direction d) {
+    return d == Direction::UP    ? Direction::RIGHT
+        :  d == Direction::RIGHT ? Direction::DOWN
+        :  d == Direction::DOWN  ? Direction::LEFT
+        :  d == Direction::LEFT  ? Direction::UP :
+                Direction::NONE;
+}
 
 struct Coord {
     int32_t x;
@@ -35,6 +42,19 @@ inline Coord& operator+=(Coord& c, const Coord other) {
 inline Coord operator+(const Coord& a, const Coord& b) {
     Coord result = a;
     result += b;
+    return result;
+}
+
+inline Coord& operator-=(Coord& c, const Coord other) {
+    c.x -= other.x;
+    c.y -= other.y;
+
+    return c;
+}
+
+inline Coord operator-(const Coord& a, const Coord& b) {
+    Coord result = a;
+    result -= b;
     return result;
 }
 

@@ -1,11 +1,14 @@
-#include "model.h"
 #include <string>
+
+#include "model.h"
+#include "bots.h"
 
 namespace sngm {
 
-void GameModel::spawnDefaultSnake(Coord offset, Direction dir) {
+Snake& GameModel::spawnDefaultSnake(Coord offset, Direction dir) {
     std::list<Coord> body = {offset + Coord{2, 0}, offset + Coord{1, 0}, offset + Coord{0, 0}};
     snakes.push_back(Snake{body, dir});
+    return snakes.back();
 }
 
 GameModel::GameModel(int32_t width_, int32_t height_, uint16_t spawn_controlled, uint16_t spawn_bot)
@@ -18,6 +21,9 @@ GameModel::GameModel(int32_t width_, int32_t height_, uint16_t spawn_controlled,
     }
 
     bot_snakes = std::min(spawn_bot, MAX_BOT_SNAKES);
+    for (int i = 0; i < bot_snakes; i++) {
+        spawnSnakeBot<SnakeBot_Intuitive>();
+    }
 }
 //
 // CellObj GameModel::checkCoord(Coord pos) {
@@ -29,6 +35,7 @@ std::map<Coord, CellType> GameModel::buildOccupiedCells() {
     std::map<Coord, CellType> result;
 
     for (const Snake &snake: snakes) {
+        if (!snake.isAlive) continue;
         auto it = snake.body.begin();
         result[*it] = SnakeHeadType;
         it++;
@@ -83,6 +90,10 @@ void GameModel::tickStep() {
     spawnRabbits();
 
     auto occupied_cells = buildOccupiedCells();
+    // updating bots
+    for (auto& snake_bot: bot_controllers) {
+        snake_bot->tick(*this);
+    }
 
     for (Snake& snake: snakes) {
         if (!snake.isAlive) continue;

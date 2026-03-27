@@ -17,7 +17,7 @@ public:
     bool isAlive = true;
 
     void setDirection(Direction new_dir) {
-        if (isAlive && !isOppositeDireciton(direction, new_dir))
+        if (isAlive && !isOppositeDirection(direction, new_dir))
             direction = new_dir;
     }
 

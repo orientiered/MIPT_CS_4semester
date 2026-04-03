@@ -14,7 +14,7 @@ void GameController::run() {
         auto current_time = clock.now();
 
         while (std::optional<GameEvent> event = view.pollEvent()) {
-            // std::cout << "processing event with code " << static_cast<int>(event->key) << "\n";
+            // std::cout << "processing event with code " << static_cast<int>() << "\n";
             processEvent(*event);
         }
 

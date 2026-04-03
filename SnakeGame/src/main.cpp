@@ -2,6 +2,7 @@
 
 #include "ascii_view.h"
 #include "controller.h"
+#include "graphic_view.h"
 #include "model.h"
 #include "snake.h"
 
@@ -42,7 +43,8 @@ int main(int argc, const char *argv[]) {
     auto bot_pattern = std::vector<sngm::BotType>(bot_count, sngm::BotType(bot_type));
     sngm::GameModel model(40, 30, player_count, bot_count, bot_pattern);
 
-    sngm::AsciiView view;
+    // sngm::AsciiView view;
+    sngm::GraphicView view;
 
     sngm::GameController controller(model, view);
 

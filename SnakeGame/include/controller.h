@@ -26,7 +26,6 @@ private:
 
     bool is_paused = false;
     bool exit_request = false;
-    // std::chrono::duration<double> ;
 public:
     GameController(GameModel& _model, IView& _view):
         model(_model), view(_view) {

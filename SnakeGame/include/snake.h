@@ -16,6 +16,7 @@ public:
 
     bool isAlive = true;
 
+    // TODO: check opposite direction based on previous segment
     void setDirection(Direction new_dir) {
         if (isAlive && !isOppositeDirection(direction, new_dir))
             direction = new_dir;

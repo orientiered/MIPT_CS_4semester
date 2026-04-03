@@ -21,6 +21,7 @@ enum CellType {EmptyType = 0, SnakeBodyType, SnakeHeadType, RabbitType, WallType
 
 class GameModel;
 
+/* =============== Bot related ======================= */
 class ISnakeBot {
 protected:
     ISnakeBot(Snake& snake): controlled(&snake) {}
@@ -31,9 +32,16 @@ public:
     virtual ~ISnakeBot() = default;
 };
 
+enum BotType {
+    SNAKE_BOT_DUMB,
+    SNAKE_BOT_MEDIUM
+};
+
+
 class GameModel {
 public:
-    GameModel(int32_t width_, int32_t height_, uint16_t spawn_controlled = 1, uint16_t spawn_bot = 0);
+    GameModel(int32_t width_, int32_t height_, uint16_t spawn_controlled = 1, uint16_t spawn_bot = 0,
+              std::vector<BotType> bot_types = std::vector<BotType>());
 
     int32_t width, height;
 
@@ -72,6 +80,7 @@ public:
 
     // Try to resize model to new_width x new_height
     void resize(int32_t new_width, int32_t new_height);
+    CellType checkCoord(Coord pos, bool update_cache = false);
 private:
     std::deque<Snake> snakes;
     std::deque<Rabbit> rabbits;
@@ -84,9 +93,9 @@ private:
     void spawnRabbits();
 
     std::map<Coord, CellType> buildOccupiedCells();
+    std::map<Coord, CellType> cellsCache;
 
     void kill_rabbit(Coord c);
-    // CellObj checkCoord(Coord pos);
 
     Snake& spawnDefaultSnake(Coord offset, Direction dir = Direction::RIGHT);
 

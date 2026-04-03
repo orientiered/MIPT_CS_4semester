@@ -12,6 +12,12 @@
 8. Полировка
 
 
+### TODO:
++ check opposite direction of snake based on previous segment
++ remove full redraw on ascii view
++ randomize path finding
+
+
 Идеи:
 + киберпанк тематика
 + ускорение змейки при помощи бустеров

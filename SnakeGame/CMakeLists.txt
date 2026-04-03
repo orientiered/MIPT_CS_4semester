@@ -14,3 +14,4 @@ message("SOURCES = ${sources}")
 add_executable(${EXEC_NAME} ${sources})
 
 target_include_directories(${EXEC_NAME} PRIVATE include)
+target_include_directories(${EXEC_NAME} PRIVATE .)

@@ -1,3 +1,4 @@
+#include <iostream>
 #include <string>
 
 #include "model.h"
@@ -11,7 +12,8 @@ Snake& GameModel::spawnDefaultSnake(Coord offset, Direction dir) {
     return snakes.back();
 }
 
-GameModel::GameModel(int32_t width_, int32_t height_, uint16_t spawn_controlled, uint16_t spawn_bot)
+GameModel::GameModel(int32_t width_, int32_t height_, uint16_t spawn_controlled, uint16_t spawn_bot,
+                     std::vector<BotType> bot_types)
 {
     resize(width_, height_);
     controllable_snakes = std::min(spawn_controlled, MAX_CONTROLLABLE_SNAKES);
@@ -22,14 +24,34 @@ GameModel::GameModel(int32_t width_, int32_t height_, uint16_t spawn_controlled,
 
     bot_snakes = std::min(spawn_bot, MAX_BOT_SNAKES);
     for (int i = 0; i < bot_snakes; i++) {
-        spawnSnakeBot<SnakeBot_Intuitive>();
+        BotType bot_type = (i < bot_types.size()) ? bot_types[i] : SNAKE_BOT_DUMB;
+
+        switch (bot_type) {
+            case SNAKE_BOT_DUMB:
+                spawnSnakeBot<SnakeBot_Intuitive>();
+                break;
+            case SNAKE_BOT_MEDIUM:
+                spawnSnakeBot<SnakeBot_Intuitive2>();
+                break;
+            default:
+                std::cerr << "Invalid bot type";
+                break;
+        }
     }
 }
 //
-// CellObj GameModel::checkCoord(Coord pos) {
-//     //TODO:
-//     return EmptyObj;
-// }
+CellType GameModel::checkCoord(Coord pos, bool update_cache) {
+    //TODO:
+    if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= height) {
+        return WallType;
+    }
+
+    if (update_cache) cellsCache = buildOccupiedCells();
+
+    auto cellIt = cellsCache.find(pos);
+    if (cellIt == cellsCache.end()) return EmptyType;
+    else return cellIt->second;
+}
 
 std::map<Coord, CellType> GameModel::buildOccupiedCells() {
     std::map<Coord, CellType> result;
@@ -55,15 +77,15 @@ std::map<Coord, CellType> GameModel::buildOccupiedCells() {
 
 void GameModel::spawnRabbits() {
     //TODO: may be optimized i guess
-    auto occupied_cells = buildOccupiedCells();
+    // auto occupied_cells = buildOccupiedCells();
 
     int able_to_spawn = max_rabbit_count - rabbits.size();
     for (int i = 0; i < max_rabbit_spawn_tries && able_to_spawn > 0; i++) {
         int x = rng.range(0, width);
         int y = rng.range(0, height);
-        if (occupied_cells.find(Coord{x, y}) == occupied_cells.end()) {
+        if (checkCoord(Coord{x, y}) == EmptyType) {
             rabbits.push_back(Rabbit{x, y});
-            occupied_cells[{x,y}] = RabbitType;
+            cellsCache[{x,y}] = RabbitType;
             able_to_spawn--;
         }
     }
@@ -87,9 +109,11 @@ void GameModel::tickStep() {
         //TODO: game over + score
     }
 
+    // updating cells cache
+    checkCoord({0, 0}, true);
+
     spawnRabbits();
 
-    auto occupied_cells = buildOccupiedCells();
     // updating bots
     for (auto& snake_bot: bot_controllers) {
         snake_bot->tick(*this);
@@ -98,9 +122,10 @@ void GameModel::tickStep() {
     for (Snake& snake: snakes) {
         if (!snake.isAlive) continue;
         Coord nextCell = snake.getNextCell();
-        switch(occupied_cells[nextCell]) {
+        switch(checkCoord(nextCell)) {
             case SnakeBodyType:
             case SnakeHeadType:
+            case WallType:
                 snake.kill();
                 break;
             case EmptyType:

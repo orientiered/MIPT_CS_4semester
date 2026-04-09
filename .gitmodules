@@ -4,3 +4,6 @@
 [submodule "AudioEditor/lib_deps/plog"]
 	path = AudioEditor/lib_deps/plog
 	url = https://github.com/SergiusTheBest/plog.git
+[submodule "AudioEditor/lib_deps/kissfft"]
+	path = AudioEditor/lib_deps/kissfft
+	url = https://github.com/mborgerding/kissfft.git

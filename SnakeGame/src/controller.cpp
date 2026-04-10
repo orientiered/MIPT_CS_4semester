@@ -28,7 +28,7 @@ void GameController::run() {
             next_render = current_time + renderPeriod;
         }
 
-        std::this_thread::sleep_until(std::min(next_render, next_tick));
+        // std::this_thread::sleep_until(std::min(next_render, next_tick));
     }
 
 

@@ -14,6 +14,11 @@ int main(int argc, const char *argv[]) {
     CLI::App arg_parser{"Snake game"};
 
     int player_count = 1;
+
+    bool text_view = false;
+
+    arg_parser.add_flag("-a,--ascii", text_view, "Use text view instead of graphics");
+
     arg_parser.add_option("-p,--players", player_count, "Number of human-controlled snakes (players)");
 
     int bot_count = 0;
@@ -43,12 +48,19 @@ int main(int argc, const char *argv[]) {
     auto bot_pattern = std::vector<sngm::BotType>(bot_count, sngm::BotType(bot_type));
     sngm::GameModel model(40, 30, player_count, bot_count, bot_pattern);
 
-    // sngm::AsciiView view;
-    sngm::GraphicView view;
+    if (text_view) {
+        sngm::AsciiView view;
+        sngm::GameController controller(model, view);
 
-    sngm::GameController controller(model, view);
+        controller.run();
 
-    controller.run();
+    } else {
+        sngm::GraphicView view;
+        sngm::GameController controller(model, view);
+
+        controller.run();
+    }
+
 
     return 0;
 }

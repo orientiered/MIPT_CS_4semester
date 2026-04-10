@@ -1,8 +1,11 @@
 #pragma once
 #include "view.h"
+#include <filesystem>
 #include <memory>
 
 namespace sngm {
+
+static const std::filesystem::path FONT_PATH = std::filesystem::path("data") / "Play-Regular.ttf";
 
 class GraphicView final: public IView {
 public:

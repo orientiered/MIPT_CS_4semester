@@ -86,7 +86,7 @@ public:
         // if new head position is in danger, rotating direction
         for (int i = 0; i < 3; i++) {
             Coord new_head = head + new_dir;
-            CellType cell = model.checkCoord(new_head);
+            CellType cell = model.checkCoord(new_head).type;
             if (cell == EmptyType || cell == RabbitType) {
                 break;
             }

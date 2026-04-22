@@ -85,7 +85,7 @@ struct GraphicView::Impl {
         sf::Vector2f size = game_field_rect.size;
 
         float x = pos.x * ws.x + coord.x * pixels_per_cell;
-        float y = (pos.y + size.y) * ws.y - coord.y * pixels_per_cell;
+        float y = (pos.y + size.y) * ws.y - coord.y * pixels_per_cell - pixels_per_cell;
         return {x, y};
     }
 
@@ -148,10 +148,29 @@ struct GraphicView::Impl {
             }
 
             for (int i = 0; i < model.controllable_snakes; i++) {
-                sf::Text snake_text(font, "Player" + std::to_string(i+1));
+                
+                std::string text = "Player" + std::to_string(i+1) + 
+                                   " score: " + std::to_string(model.getScore(i));
+
+                sf::Text snake_text(font, text);
                 auto snake_col = getSnakeColors(i);
                 snake_text.setFillColor(snake_col.second);
                 snake_text.setPosition({0, i*snake_text.getGlobalBounds().size.y});
+
+                window.draw(snake_text);
+            }
+
+            for (int i = 0; i < model.bot_snakes; i++) {
+                
+                int64_t botId = i + model.controllable_snakes;
+
+                std::string text = "Bot" + std::to_string(i+1) + 
+                                   " score: " + std::to_string(model.getScore(botId));
+
+                sf::Text snake_text(font, text);
+                auto snake_col = getSnakeColors(botId);
+                snake_text.setFillColor(snake_col.second);
+                snake_text.setPosition({0, (i+model.controllable_snakes)*snake_text.getGlobalBounds().size.y});
 
                 window.draw(snake_text);
             }

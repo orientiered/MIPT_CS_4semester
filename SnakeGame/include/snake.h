@@ -8,8 +8,16 @@
 #include <string>
 namespace sngm {
 
+using SnakeId = int64_t;
+
 class Snake {
+private:
+    static SnakeId unique_id_;
 public:
+    SnakeId id_;
+
+    Snake(std::list<Coord> b, Direction dir): id_(unique_id_++), body(b), direction(dir) {}
+
     std::list<Coord> body;
     Direction direction;
     std::string name = "snake";
@@ -33,5 +41,7 @@ public:
     void step();
     void grow();
 };
+
+inline SnakeId Snake::unique_id_ = 0;
 
 }

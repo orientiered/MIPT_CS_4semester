@@ -38,37 +38,39 @@ GameModel::GameModel(int32_t width_, int32_t height_, uint16_t spawn_controlled,
                 break;
         }
     }
+
 }
 //
-CellType GameModel::checkCoord(Coord pos, bool update_cache) {
+CellInfo GameModel::checkCoord(Coord pos, bool update_cache) {
     //TODO:
     if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= height) {
-        return WallType;
+        return {WallType, 0};
     }
 
     if (update_cache) cellsCache = buildOccupiedCells();
 
     auto cellIt = cellsCache.find(pos);
-    if (cellIt == cellsCache.end()) return EmptyType;
+    if (cellIt == cellsCache.end()) return {EmptyType, 0};
     else return cellIt->second;
 }
 
-std::map<Coord, CellType> GameModel::buildOccupiedCells() {
-    std::map<Coord, CellType> result;
+std::map<Coord, CellInfo> GameModel::buildOccupiedCells() {
+    std::map<Coord, CellInfo> result;
 
+    
     for (const Snake &snake: snakes) {
         if (!snake.isAlive) continue;
         auto it = snake.body.begin();
-        result[*it] = SnakeHeadType;
+        result[*it] = {SnakeHeadType, snake.id_};
         it++;
         while (it != snake.body.end()) {
-            result[*it] = SnakeBodyType;
+            result[*it] = {SnakeBodyType, snake.id_};
             it++;
         }
     }
 
     for (const Rabbit &rabbit: rabbits) {
-        result[rabbit.pos] = RabbitType;
+        result[rabbit.pos] = {RabbitType, rabbit.id_};
     }
 
     return result;
@@ -83,9 +85,9 @@ void GameModel::spawnRabbits() {
     for (int i = 0; i < max_rabbit_spawn_tries && able_to_spawn > 0; i++) {
         int x = rng.range(0, width);
         int y = rng.range(0, height);
-        if (checkCoord(Coord{x, y}) == EmptyType) {
-            rabbits.push_back(Rabbit{x, y});
-            cellsCache[{x,y}] = RabbitType;
+        if (checkCoord(Coord{x, y}).type == EmptyType) {
+            rabbits.push_back(Rabbit({x, y}));
+            cellsCache[{x,y}] = {RabbitType, rabbits.back().id_};
             able_to_spawn--;
         }
     }
@@ -98,6 +100,22 @@ void GameModel::kill_rabbit(Coord c) {
             break;
         }
     }
+}
+
+Snake* GameModel::getSnakeById(int64_t id) {
+    for (Snake& snake: snakes) {
+        if (snake.id_ == id) return &snake;
+    }
+
+    return nullptr;
+}
+
+Rabbit* GameModel::getRabbitById(int64_t id) {
+       for (Rabbit& rab: rabbits) {
+        if (rab.id_ == id) return &rab;
+    }
+
+    return nullptr;
 }
 
 
@@ -122,8 +140,14 @@ void GameModel::tickStep() {
     for (Snake& snake: snakes) {
         if (!snake.isAlive) continue;
         Coord nextCell = snake.getNextCell();
-        switch(checkCoord(nextCell)) {
+        CellInfo cell_info = checkCoord(nextCell);
+
+        switch(cell_info.type) {
             case SnakeBodyType:
+                snake.kill();
+                if (cell_info.id != snake.id_)
+                    score[cell_info.id] += scorePerKill;
+                break;
             case SnakeHeadType:
             case WallType:
                 snake.kill();
@@ -133,6 +157,7 @@ void GameModel::tickStep() {
                 break;
             case RabbitType:
                 snake.grow();
+                score[snake.id_] += scorePerRabbit;
                 kill_rabbit(nextCell);
                 break;
             default:

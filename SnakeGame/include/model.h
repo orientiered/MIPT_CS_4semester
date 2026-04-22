@@ -19,6 +19,11 @@ namespace sngm {
 //EmptyType must be zero for default construction
 enum CellType {EmptyType = 0, SnakeBodyType, SnakeHeadType, RabbitType, WallType};
 
+struct CellInfo {
+    CellType type;
+    int64_t id;
+};
+
 class GameModel;
 
 /* =============== Bot related ======================= */
@@ -37,6 +42,7 @@ enum BotType {
     SNAKE_BOT_MEDIUM
 };
 
+using Score_t = int;
 
 class GameModel {
 public:
@@ -45,6 +51,8 @@ public:
 
     int32_t width, height;
 
+    Snake* getSnakeById(SnakeId id);
+    Rabbit* getRabbitById(int64_t id);
     const std::deque<Snake>& getSnakes() const {
         return snakes;
     }
@@ -62,6 +70,7 @@ public:
 
     uint16_t max_rabbit_count = 3;
     uint16_t max_rabbit_spawn_tries = 1;
+    
 
     FastRng rng;
 
@@ -80,8 +89,19 @@ public:
 
     // Try to resize model to new_width x new_height
     void resize(int32_t new_width, int32_t new_height);
-    CellType checkCoord(Coord pos, bool update_cache = false);
+    CellInfo checkCoord(Coord pos, bool update_cache = false);
+
+    Score_t getScore(SnakeId id) const { 
+        auto it = score.find(id);
+        if (it != score.end()) return it->second;
+
+        return {};
+    }  
+
+    const Score_t scorePerRabbit = 10;
+    const Score_t scorePerKill = 30;
 private:
+    std::map<SnakeId, Score_t> score;
     std::deque<Snake> snakes;
     std::deque<Rabbit> rabbits;
 
@@ -92,8 +112,8 @@ private:
 
     void spawnRabbits();
 
-    std::map<Coord, CellType> buildOccupiedCells();
-    std::map<Coord, CellType> cellsCache;
+    std::map<Coord, CellInfo> buildOccupiedCells();
+    std::map<Coord, CellInfo> cellsCache;
 
     void kill_rabbit(Coord c);
 

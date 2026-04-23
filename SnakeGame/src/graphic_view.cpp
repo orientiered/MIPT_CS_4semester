@@ -52,29 +52,35 @@ struct SnakeSprites {
     sf::Sprite tail;
     sf::Sprite head;
 
-    int sprite_size = 341;
+    int sprite_size = 255;
 
     SnakeSprites(sf::Texture &atlas): 
         linear(atlas), tail(atlas), turn(atlas), head(atlas) {
                 
         sf::Vector2i pos(0,0);
-        sf::Vector2i size(341, 341);
 
-        linear.setTextureRect(sf::IntRect(pos, size));
-        linear.setOrigin(sf::Vector2f(size)*0.5f);
 
-        pos.x += size.x;
-        turn.setTextureRect(sf::IntRect(pos, size));
-        turn.setOrigin(sf::Vector2f(size)*0.5f);
+        auto setRectAndOrigin = [&](sf::Sprite &sprite, sf::Vector2i size) {
+            sprite.setTextureRect(sf::IntRect(pos, size));
+            sprite.setOrigin(sf::Vector2f(size)*0.5f);
 
-        pos.x += size.x;
-        tail.setTextureRect(sf::IntRect(pos, size));
-        tail.setOrigin(sf::Vector2f(size)*0.5f);
+            pos.x += size.x;
+            pos.x++; // offset by one pixel
+        };
 
-        pos.x += size.x;
-        size *= 2;
-        head.setTextureRect(sf::IntRect(pos, size));
-        head.setOrigin(sf::Vector2f(size)*0.5f);
+        sf::Vector2i linear_size(161, 255);
+        setRectAndOrigin(linear, linear_size);
+        
+        sf::Vector2i turn_size(363-162, 215);
+        setRectAndOrigin(turn, turn_size);
+        turn.setOrigin({161.f/2, 161.f/2});
+
+        sf::Vector2i tail_size(161, 255);
+        setRectAndOrigin(tail, tail_size);
+
+        pos.x++;
+        sf::Vector2i head_size(786-529, 334);
+        setRectAndOrigin(head, head_size);
 
     }
 };
@@ -190,10 +196,10 @@ struct GraphicView::Impl {
                         u = (dif1.y < 0) || (dif2.y > 0),
                         d = (dif1.y > 0) || (dif2.y < 0);
 
-                rotation = (d && l) ? 0   :
-                            (l && u) ? 90  :
-                            (u && r) ? 180 :
-                            (r && d) ? -90 : 0; 
+                rotation =  (d && l) ? 90  :
+                            (l && u) ? 180 :
+                            (u && r) ? -90 :
+                            (r && d) ? 0 : 0; 
                     
             }
 
@@ -207,7 +213,7 @@ struct GraphicView::Impl {
 
         segment = &snake_sprites.head;
         segment->setColor(head_col);
-        segment->setRotation(sf::degrees(directionToDegree(snake.direction)));
+        segment->setRotation(sf::degrees(180) + sf::degrees(directionToDegree(snake.direction)));
         segment->setScale({scale, scale});
         // sf::Vector2f head_offset = sf::Vector2f(sf::Vector2i{snake_sprites.sprite_size,snake_sprites.sprite_size})*0.75f*scale;
         // sf::Vector2f head_offset = {0.f, 0.f};

@@ -46,6 +46,39 @@ static sf::Color hsv(int hue, float sat, float val) {
 }
 
 
+struct SnakeSprites {
+    sf::Sprite linear;
+    sf::Sprite turn;
+    sf::Sprite tail;
+    sf::Sprite head;
+
+    int sprite_size = 341;
+
+    SnakeSprites(sf::Texture &atlas): 
+        linear(atlas), tail(atlas), turn(atlas), head(atlas) {
+                
+        sf::Vector2i pos(0,0);
+        sf::Vector2i size(341, 341);
+
+        linear.setTextureRect(sf::IntRect(pos, size));
+        linear.setOrigin(sf::Vector2f(size)*0.5f);
+
+        pos.x += size.x;
+        turn.setTextureRect(sf::IntRect(pos, size));
+        turn.setOrigin(sf::Vector2f(size)*0.5f);
+
+        pos.x += size.x;
+        tail.setTextureRect(sf::IntRect(pos, size));
+        tail.setOrigin(sf::Vector2f(size)*0.5f);
+
+        pos.x += size.x;
+        size *= 2;
+        head.setTextureRect(sf::IntRect(pos, size));
+        head.setOrigin(sf::Vector2f(size)*0.5f);
+
+    }
+};
+
 struct GraphicView::Impl {
     sf::RenderWindow window;
 
@@ -55,9 +88,15 @@ struct GraphicView::Impl {
 
     sf::Font font;
 
+    sf::Texture atlas;
+
+    SnakeSprites snake_sprites;
+
     bool initial_resize = true;
 
-    Impl() {
+    Impl():
+        snake_sprites(atlas) 
+    {
         window.create(sf::VideoMode( { 1000, 1000 } ), "Snake game!" );
 
         reference_field_rect.position = {0.1, 0.05};
@@ -68,6 +107,10 @@ struct GraphicView::Impl {
 
         if (!font.openFromFile(FONT_PATH)) {
             throw std::runtime_error("Failed to open font " + FONT_PATH.string());
+        }
+
+        if (!atlas.loadFromFile(ATLAS_PATH)) {
+            throw std::runtime_error("Failed to open texture atlas " + ATLAS_PATH.string());
         }
 
     }
@@ -89,23 +132,88 @@ struct GraphicView::Impl {
         return {x, y};
     }
 
+    sf::Vector2f coordToScreenCentered(Coord coord) {
+        return coordToScreen(coord) + sf::Vector2f{pixels_per_cell, pixels_per_cell}*0.5f;
+    }
+
     void drawRabbit(const Rabbit& rabbit);
 
     void drawSnake(const Snake& snake, sf::Color body_col, sf::Color head_col) {
         if (!snake.isAlive) return;
 
-        sf::RectangleShape segment(sf::Vector2f{pixels_per_cell, pixels_per_cell} * 0.9f);
-        for (Coord c: snake.body) {
-            segment.setPosition(coordToScreen(c));
-            segment.setFillColor(body_col);
+        Coord prev_coord;
+        Coord next_coord = snake.body.front();
 
-            window.draw(segment);
+        sf::Sprite* segment = &snake_sprites.head;
+        float scale = pixels_per_cell / snake_sprites.sprite_size;
+
+        auto snake_it = snake.body.begin();
+        int snake_size = snake.body.size();
+        for (int i = 0; i < snake_size; i++, snake_it++) {
+
+            Coord cur = next_coord;
+
+            if (i < snake.body.size() - 1) {
+                snake_it++;
+                next_coord =  *snake_it;
+                snake_it--;
+            }
+
+            Coord dif1 = cur - prev_coord,
+                    dif2 = next_coord - cur;
+
+            prev_coord = cur;
+
+            sf::Vector2f pos = coordToScreenCentered(cur);
+
+            float rotation = 0;
+            if (i == 0) {
+                // head
+                continue; // head must be drawn last
+            } else if (i == (snake_size - 1)) {
+                //tail
+                segment = &snake_sprites.tail;
+                rotation =  (dif1.x > 0) ? -90 :
+                            (dif1.x < 0) ? +90 :
+                            (dif1.y > 0) ? +180 : 
+                            (dif1.y < 0) ? 0 : 0;
+
+            } else if (dif1 == dif2) {
+                // linear
+                segment = &snake_sprites.linear;
+                rotation = (dif1.x == 0) ? 0 : 90;
+            } else {
+                // turn
+                segment = &snake_sprites.turn;
+                bool l = (dif1.x > 0) || (dif2.x < 0),
+                        r = (dif1.x < 0) || (dif2.x > 0),
+                        u = (dif1.y < 0) || (dif2.y > 0),
+                        d = (dif1.y > 0) || (dif2.y < 0);
+
+                rotation = (d && l) ? 0   :
+                            (l && u) ? 90  :
+                            (u && r) ? 180 :
+                            (r && d) ? -90 : 0; 
+                    
+            }
+
+            segment->setPosition(pos);
+            segment->setScale({scale, scale});
+            segment->setColor(body_col);
+            segment->setRotation(sf::degrees(rotation));
+
+            window.draw(*segment);
         }
 
-        segment.setPosition(coordToScreen(snake.body.front()));
-        segment.setFillColor(head_col);
+        segment = &snake_sprites.head;
+        segment->setColor(head_col);
+        segment->setRotation(sf::degrees(directionToDegree(snake.direction)));
+        segment->setScale({scale, scale});
+        // sf::Vector2f head_offset = sf::Vector2f(sf::Vector2i{snake_sprites.sprite_size,snake_sprites.sprite_size})*0.75f*scale;
+        // sf::Vector2f head_offset = {0.f, 0.f};
+        segment->setPosition(coordToScreenCentered(snake.body.front()));
 
-        window.draw(segment);
+        window.draw(*segment);
 
     }
 

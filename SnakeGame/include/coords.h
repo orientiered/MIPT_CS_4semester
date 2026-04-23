@@ -17,9 +17,25 @@ inline Direction directionRotate90(Direction d) {
                 Direction::NONE;
 }
 
+inline float directionToDegree(Direction d) {
+    switch (d) {
+        case Direction::UP:
+            return 0;
+        case Direction::RIGHT:
+            return 90;
+        case Direction::DOWN:
+            return 180;
+        case Direction::LEFT:
+            return 270;
+        case Direction::NONE:
+        default:
+            return 0;
+    }
+}
+
 struct Coord {
-    int32_t x;
-    int32_t y;
+    int32_t x = 0;
+    int32_t y = 0;
 
     bool operator==(const Coord& other) const {
         return x == other.x && y == other.y;

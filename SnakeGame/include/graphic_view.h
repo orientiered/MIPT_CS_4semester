@@ -5,7 +5,8 @@
 
 namespace sngm {
 
-static const std::filesystem::path FONT_PATH = std::filesystem::path("data") / "Play-Regular.ttf";
+static const std::filesystem::path FONT_PATH  = std::filesystem::path("data") / "Play-Regular.ttf";
+static const std::filesystem::path ATLAS_PATH = std::filesystem::path("data") / "atlas.png";
 
 class GraphicView final: public IView {
 public:

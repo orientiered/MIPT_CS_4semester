@@ -104,6 +104,7 @@ struct GraphicView::Impl {
     sf::Font font;
 
     sf::Texture atlas;
+    sf::Texture background;
 
     SpriteManager sprites;
 
@@ -126,6 +127,10 @@ struct GraphicView::Impl {
 
         if (!atlas.loadFromFile(ATLAS_PATH)) {
             throw std::runtime_error("Failed to open texture atlas " + ATLAS_PATH.string());
+        }
+
+        if (!background.loadFromFile(BACKGROUND_PATH)) {
+            throw std::runtime_error("Failed to open bcakground texture " + BACKGROUND_PATH.string());
         }
 
     }
@@ -302,11 +307,16 @@ struct GraphicView::Impl {
 
         window.clear();
 
+        sf::Sprite back_sprite(background);
+        back_sprite.setScale(sf::Vector2f(window.getSize()).componentWiseDiv(sf::Vector2f(back_sprite.getTextureRect().size)));
+        back_sprite.setPosition({0,0});
+        window.draw(back_sprite);
+
         sf::RectangleShape border(scaleRelToScreen(game_field_rect.size));
         border.setPosition(scaleRelToScreen(game_field_rect.position));
         border.setOutlineThickness(3);
         border.setOutlineColor(sf::Color::White);
-        border.setFillColor(sf::Color::Black);
+        border.setFillColor(sf::Color(0, 0, 0, 167));
 
         window.draw(border);
 

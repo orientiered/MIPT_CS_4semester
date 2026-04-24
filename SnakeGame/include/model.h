@@ -38,14 +38,19 @@ public:
 };
 
 enum BotType {
-    SNAKE_BOT_DUMB,
-    SNAKE_BOT_MEDIUM
+    SNAKE_BOT_DUMB = 0,
+    SNAKE_BOT_MEDIUM,
+    SNAKE_BOT_BFS
 };
+
+const BotType MIN_BOT_TYPE = SNAKE_BOT_DUMB;
+const BotType MAX_BOT_TYPE = SNAKE_BOT_BFS;
 
 static inline std::string botTypeToString(BotType bot) {
     switch (bot) {
         case SNAKE_BOT_DUMB:   return "DUMB";
         case SNAKE_BOT_MEDIUM: return "MEDIUM";
+        case SNAKE_BOT_BFS:    return "BFSBOT";
         default:               return "UNKNOWN";
     }
 }
@@ -101,7 +106,7 @@ public:
 
     // Try to resize model to new_width x new_height
     void resize(int32_t new_width, int32_t new_height);
-    CellInfo checkCoord(Coord pos, bool update_cache = false);
+    CellInfo checkCoord(Coord pos) const;
 
     Score_t getScore(SnakeId id) const { 
         auto it = score.find(id);

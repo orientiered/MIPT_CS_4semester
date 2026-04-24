@@ -41,6 +41,10 @@ struct Coord {
         return x == other.x && y == other.y;
     }
 
+    bool operator!=(const Coord& other) const {
+        return !(*this == other);
+    }
+
     bool operator<(const Coord& other) const {
         if (x < other.x) return true;
         if (x == other.x) return y < other.y;

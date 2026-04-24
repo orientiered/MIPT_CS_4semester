@@ -44,9 +44,9 @@ int main(int argc, const char *argv[]) {
         std::cerr << "Invalid number of bot snakes: defaulting to 0\n";
     }
 
-    if (bot_type < 0 || bot_type > sngm::SNAKE_BOT_MEDIUM) {
+    if (bot_type < sngm::MIN_BOT_TYPE || bot_type > sngm::MAX_BOT_TYPE) {
         std::cerr << "Invalid bot type, defaulting to DUMB\n";
-        bot_type = 0;
+        bot_type = sngm::MIN_BOT_TYPE;
     }
 
     // Game launch

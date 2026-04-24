@@ -45,6 +45,9 @@ void GameModel::restart() {
             case SNAKE_BOT_MEDIUM:
                 spawnSnakeBot<SnakeBot_Intuitive2>();
                 break;
+            case SNAKE_BOT_BFS:
+                spawnSnakeBot<SnakeBot_BFS>();
+                break;
             default:
                 std::cerr << "Invalid bot type";
                 break;
@@ -60,13 +63,11 @@ void GameModel::updateCache() {
     cellsCache = buildOccupiedCells();
 }
 
-CellInfo GameModel::checkCoord(Coord pos, bool update_cache) {
+CellInfo GameModel::checkCoord(Coord pos) const {
     //TODO:
     if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= height) {
         return {WallType, 0};
     }
-
-    if (update_cache) updateCache();
 
     auto cellIt = cellsCache.find(pos);
     if (cellIt == cellsCache.end()) return {EmptyType, 0};

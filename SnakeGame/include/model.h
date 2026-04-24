@@ -62,6 +62,12 @@ struct LazerTurret {
 
 };
 
+struct LazerShootEvent {
+    int tick = 0;
+    Coord shoot_pos;
+    Direction shoot_dir;
+};
+
 using Score_t = int;
 
 using RunStats = std::vector<std::pair<Score_t, BotType>>;
@@ -97,6 +103,7 @@ public:
     uint16_t max_rabbit_count = 3;
     uint16_t max_rabbit_spawn_tries = 1;
     
+    LazerShootEvent lazer_shoot;
 
     FastRng rng;
 

@@ -99,6 +99,8 @@ struct GraphicView::Impl {
     sf::FloatRect reference_field_rect;
     sf::FloatRect game_field_rect;
 
+    int width_cells, height_cells;
+    
     sf::Font font;
 
     sf::Texture atlas;
@@ -156,6 +158,24 @@ struct GraphicView::Impl {
         sh.setPosition(coordToScreen(turret.pos));
         sh.setFillColor(sf::Color::Cyan);
         window.draw(sh);
+    }
+
+    void drawLazerShoot(Coord pos, Direction dir) {
+        sf::Vector2f lazer_pos = coordToScreenCentered(pos); 
+        float width = (dir == Direction::RIGHT) ? width_cells - pos.x :
+                      (dir == Direction::LEFT ) ? pos.x + 1 :
+                      (dir == Direction::UP)    ? height_cells - pos.y :
+                      pos.y + 1;
+        width *= pixels_per_cell;
+
+        sf::Vector2f lazer_size(pixels_per_cell, width);
+        sf::RectangleShape lazer(lazer_size);
+        lazer.setOrigin({pixels_per_cell/2, pixels_per_cell/2});
+        lazer.setRotation(sf::degrees(180) + sf::degrees(directionToDegree(dir)));
+        lazer.setPosition(lazer_pos);
+        lazer.setFillColor(sf::Color(30, 30, 200, 100));
+
+        window.draw(lazer);
     }
 
     void drawSnake(const Snake& snake, sf::Color body_col, sf::Color head_col) {
@@ -311,6 +331,10 @@ struct GraphicView::Impl {
                 drawLazer(*model.getTurret());
             }
 
+            if (model.lazer_shoot.tick > 0) {
+                drawLazerShoot(model.lazer_shoot.shoot_pos, model.lazer_shoot.shoot_dir);
+            }
+
             drawScores(model);
         }
 
@@ -321,14 +345,14 @@ struct GraphicView::Impl {
         sf::Vector2u ws = window.getSize();
         sf::Vector2f size = reference_field_rect.size;
 
-        int width = static_cast<int>(ws.x * size.x / pixels_per_cell);
-        int height = static_cast<int>(ws.y * size.y / pixels_per_cell);
-        std::cerr << "Resize: " << width << " " << height << "\n";
+        width_cells = static_cast<int>(ws.x * size.x / pixels_per_cell);
+        height_cells = static_cast<int>(ws.y * size.y / pixels_per_cell);
+        std::cerr << "Resize: " << width_cells << " " << height_cells << "\n";
 
-        game_field_rect.size = {width * pixels_per_cell / ws.x, height * pixels_per_cell / ws.y};
+        game_field_rect.size = {width_cells * pixels_per_cell / ws.x, height_cells * pixels_per_cell / ws.y};
         game_field_rect.position = (sf::Vector2f{1.f, 1.f} - game_field_rect.size) * 0.5f;
 
-        return WinchEvent{width, height};
+        return WinchEvent{width_cells, height_cells};
     }
 
     std::optional<GameEvent> pollEvent() {

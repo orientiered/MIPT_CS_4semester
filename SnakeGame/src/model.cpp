@@ -119,6 +119,11 @@ void GameModel::handleLazerShoot(Direction dir) {
     if (!lazer_turret) return;
 
     Coord pos = lazer_turret->pos;
+
+    lazer_shoot.shoot_dir = dir;
+    lazer_shoot.shoot_pos = pos;
+    lazer_shoot.tick = 2;
+    
     while (true) {
         pos += dir;
         CellInfo info = checkCoord(pos);
@@ -135,6 +140,7 @@ void GameModel::handleLazerShoot(Direction dir) {
         }
 
     }
+
 
     lazer_turret = std::nullopt;
 }
@@ -210,8 +216,10 @@ void GameModel::tickStep() {
         //TODO: game over + score
     }
 
-    // updating cells cache
-    // updateCache();
+    // Counting down lazer shoot timer
+    if (lazer_shoot.tick > 0) {
+        lazer_shoot.tick--;
+    }
 
     spawnLazer();
     spawnRabbits();

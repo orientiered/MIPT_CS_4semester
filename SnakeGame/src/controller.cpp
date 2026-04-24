@@ -158,6 +158,9 @@ void GameController::processEvent(const GameEvent& event) {
             case KeyEvent::PAUSE:
                 is_paused = !is_paused;
                 break;
+            case sngm::KeyEvent::RESTART:
+                model.restart();
+                break;
             default:
                 break;
         }

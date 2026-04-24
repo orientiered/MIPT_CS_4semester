@@ -81,7 +81,7 @@ public:
     int controllable_snakes = 1;
     static inline const uint16_t MAX_CONTROLLABLE_SNAKES = 2;
     int bot_snakes = 0;
-    static inline const uint16_t MAX_BOT_SNAKES = 10;
+    static inline const uint16_t MAX_BOT_SNAKES = 20;
 
     uint16_t max_rabbit_count = 3;
     uint16_t max_rabbit_spawn_tries = 1;

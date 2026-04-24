@@ -14,6 +14,7 @@ protected:
 public:
     virtual void render(const GameModel& model) = 0;
     virtual std::optional<GameEvent> pollEvent() = 0;
+    virtual ~IView() = default;
 };
 
 

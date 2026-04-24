@@ -7,7 +7,7 @@ namespace sngm {
 class AsciiView final: public IView {
 public:
     AsciiView();
-    ~AsciiView();
+    ~AsciiView() override;
     void render(const GameModel& model) override;
     std::optional<GameEvent> pollEvent() override;
 private:

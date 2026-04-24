@@ -10,7 +10,7 @@ static const std::filesystem::path ATLAS_PATH = std::filesystem::path("data") / 
 
 class GraphicView final: public IView {
 public:
-    GraphicView(uint32_t screen_width = 1280, uint32_t screen_height = 720);
+    GraphicView(uint32_t screen_width = 1920, uint32_t screen_height = 1080);
     ~GraphicView();
 
     virtual void render(const GameModel& model) override;

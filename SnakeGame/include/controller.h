@@ -18,19 +18,27 @@ private:
 
     using time_point_t = typeof(clock.now());
 
-    static constexpr auto tickPeriod = 200ms;
-    static constexpr auto renderPeriod = 33ms;
+    std::chrono::milliseconds tickPeriod = 200ms;
+    std::chrono::milliseconds renderPeriod = 33ms;
 
     time_point_t next_tick;
     time_point_t next_render;
 
     bool is_paused = false;
     bool exit_request = false;
+
+    bool tournament_mode = false;
+
 public:
-    GameController(GameModel& _model, IView& _view):
-        model(_model), view(_view) {
+    GameController(GameModel& _model, IView& _view, bool tournament):
+        model(_model), view(_view), tournament_mode(tournament) {
+            if (tournament_mode) {
+                tickPeriod = 5ms;
+            }
+
             next_tick = clock.now();
             next_render = clock.now();
+
         }
 
     void run();

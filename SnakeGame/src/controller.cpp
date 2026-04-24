@@ -21,6 +21,10 @@ void GameController::run() {
         if (next_tick <= current_time && !is_paused) {
             model.tickStep();
             next_tick = current_time + tickPeriod;
+
+            if (model.aliveSnakes() == 0 && tournament_mode) {
+                model.restart();
+            }
         }
 
         if (next_render <= current_time) {

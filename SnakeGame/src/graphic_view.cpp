@@ -100,10 +100,10 @@ struct GraphicView::Impl {
 
     bool initial_resize = true;
 
-    Impl():
+    Impl(uint32_t screen_width, uint32_t screen_height ):
         snake_sprites(atlas) 
     {
-        window.create(sf::VideoMode( { 1000, 1000 } ), "Snake game!" );
+        window.create(sf::VideoMode( { screen_width, screen_height } ), "Snake game!" );
 
         reference_field_rect.position = {0.1, 0.05};
         reference_field_rect.size = {0.8, 0.90};
@@ -228,7 +228,26 @@ struct GraphicView::Impl {
     std::pair<sf::Color, sf::Color> getSnakeColors(int i) {
 
         return {hsv(360 * i / snake_palette_len, 0.8, 0.5),
-               hsv(360 * i / snake_palette_len, 0.8, 0.6)};    
+               hsv(360 * i / snake_palette_len, 0.8, 0.7)};    
+    }
+
+    void drawScores(const GameModel& model) {
+        const std::deque<Snake> snakes = model.getSnakes();
+        for (int i = 0 ; i < snakes.size(); i++) {
+            SnakeId id = snakes[i].id_;
+
+            bool is_bot = i >= model.controllable_snakes;
+
+            std::string text = (is_bot ? "Bot" : "Player") + std::to_string(i+1) + 
+                    " score: " + std::to_string(model.getScore(id));
+
+            sf::Text snake_text(font, text);
+            auto snake_col = getSnakeColors(i);
+            snake_text.setFillColor(snake_col.second);
+            snake_text.setPosition({0, i*snake_text.getGlobalBounds().size.y});
+
+            window.draw(snake_text);
+        }
     }
 
     void render(const GameModel& model) {
@@ -261,33 +280,7 @@ struct GraphicView::Impl {
                 drawSnake(model.getSnakes()[i], snake_col.first, snake_col.second);
             }
 
-            for (int i = 0; i < model.controllable_snakes; i++) {
-                
-                std::string text = "Player" + std::to_string(i+1) + 
-                                   " score: " + std::to_string(model.getScore(i));
-
-                sf::Text snake_text(font, text);
-                auto snake_col = getSnakeColors(i);
-                snake_text.setFillColor(snake_col.second);
-                snake_text.setPosition({0, i*snake_text.getGlobalBounds().size.y});
-
-                window.draw(snake_text);
-            }
-
-            for (int i = 0; i < model.bot_snakes; i++) {
-                
-                int64_t botId = i + model.controllable_snakes;
-
-                std::string text = "Bot" + std::to_string(i+1) + 
-                                   " score: " + std::to_string(model.getScore(botId));
-
-                sf::Text snake_text(font, text);
-                auto snake_col = getSnakeColors(botId);
-                snake_text.setFillColor(snake_col.second);
-                snake_text.setPosition({0, (i+model.controllable_snakes)*snake_text.getGlobalBounds().size.y});
-
-                window.draw(snake_text);
-            }
+            drawScores(model);
         }
 
 		window.display();
@@ -369,7 +362,7 @@ std::optional<GameEvent> GraphicView::pollEvent() {
     return impl_->pollEvent();
 }
 
-GraphicView::GraphicView(uint32_t screen_width, uint32_t screen_height): impl_(std::make_unique<Impl>()) {}
+GraphicView::GraphicView(uint32_t screen_width, uint32_t screen_height): impl_(std::make_unique<Impl>(screen_width, screen_height)) {}
 GraphicView::~GraphicView() = default;
 
 

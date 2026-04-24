@@ -16,16 +16,27 @@ Snake& GameModel::spawnDefaultSnake(Coord offset, Direction dir) {
 GameModel::GameModel(int32_t width_, int32_t height_, uint16_t spawn_controlled, uint16_t spawn_bot,
                      std::vector<BotType> bot_types)
 {
+    bot_types_ = bot_types;
+
     resize(width_, height_);
     controllable_snakes = std::min(spawn_controlled, MAX_CONTROLLABLE_SNAKES);
+
+    bot_snakes = std::min(spawn_bot, MAX_BOT_SNAKES);
+    restart();
+}
+
+void GameModel::restart() {
+    snakes.clear();
+    rabbits.clear();
+    bot_controllers.clear();
+    score.clear();
 
     for (int i = 0; i < controllable_snakes; i++) {
         spawnDefaultSnake({0, height * (i+1) / (controllable_snakes + 1)});
     }
 
-    bot_snakes = std::min(spawn_bot, MAX_BOT_SNAKES);
     for (int i = 0; i < bot_snakes; i++) {
-        BotType bot_type = (i < bot_types.size()) ? bot_types[i] : SNAKE_BOT_DUMB;
+        BotType bot_type = (i < bot_types_.size()) ? bot_types_[i] : SNAKE_BOT_DUMB;
 
         switch (bot_type) {
             case SNAKE_BOT_DUMB:
@@ -223,6 +234,15 @@ void GameModel::tickStep() {
         }
     }
 
+}
+
+size_t GameModel::aliveSnakes() {
+    size_t result = 0;
+    for (Snake& snake : snakes) {
+        result += snake.isAlive;
+    }
+
+    return result;
 }
 
 bool GameModel::isValid() const {

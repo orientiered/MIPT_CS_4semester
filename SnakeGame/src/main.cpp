@@ -27,6 +27,9 @@ int main(int argc, const char *argv[]) {
     int bot_type = 0;
     arg_parser.add_option("-t,--bot-type", bot_type, "Bots type: 0 -> dumb, 1->medium");
 
+    bool tournament_mode = false;
+    arg_parser.add_flag("--tournament", tournament_mode, "Tournament mode: run multiple games");
+
     CLI11_PARSE(arg_parser, argc, argv);
 
     if (player_count < 0) {
@@ -50,13 +53,13 @@ int main(int argc, const char *argv[]) {
 
     if (text_view) {
         sngm::AsciiView view;
-        sngm::GameController controller(model, view);
+        sngm::GameController controller(model, view, tournament_mode);
 
         controller.run();
 
     } else {
         sngm::GraphicView view;
-        sngm::GameController controller(model, view);
+        sngm::GameController controller(model, view, tournament_mode);
 
         controller.run();
     }

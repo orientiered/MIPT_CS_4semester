@@ -75,6 +75,7 @@ public:
     FastRng rng;
 
     void tickStep();
+    void restart();
 
     void setPlayerSnakeDir(int snakeId, Direction dir) {
         if (snakeId < controllable_snakes)
@@ -86,6 +87,7 @@ public:
     const std::string_view getErrorString() const;
 
     bool isValid() const;
+    size_t aliveSnakes();
 
     // Try to resize model to new_width x new_height
     void resize(int32_t new_width, int32_t new_height);
@@ -106,6 +108,7 @@ private:
     std::deque<Rabbit> rabbits;
 
     std::vector<std::unique_ptr<ISnakeBot>> bot_controllers;
+    std::vector<BotType> bot_types_;
 
     bool isValidSize = true;
     std::string error_string;

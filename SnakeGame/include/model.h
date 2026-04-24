@@ -5,6 +5,7 @@
 #include <deque>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -17,7 +18,7 @@
 namespace sngm {
 
 //EmptyType must be zero for default construction
-enum CellType {EmptyType = 0, SnakeBodyType, SnakeHeadType, SnakeTailType, RabbitType, WallType};
+enum CellType {EmptyType = 0, SnakeBodyType, SnakeHeadType, SnakeTailType, RabbitType, LaserPickupType, WallType};
 
 struct CellInfo {
     CellType type;
@@ -55,6 +56,12 @@ static inline std::string botTypeToString(BotType bot) {
     }
 }
 
+
+struct LazerTurret {
+    Coord pos;
+
+};
+
 using Score_t = int;
 
 using RunStats = std::vector<std::pair<Score_t, BotType>>;
@@ -73,6 +80,10 @@ public:
     }
     const std::deque<Rabbit>& getRabbits() const {
         return rabbits;
+    }
+
+    const std::optional<LazerTurret> getTurret() const {
+        return lazer_turret;
     }
 
     static inline const int MIN_WIDTH = 40;
@@ -124,6 +135,8 @@ private:
     std::deque<Snake> snakes;
     std::deque<Rabbit> rabbits;
 
+    std::optional<LazerTurret> lazer_turret;
+
     std::vector<std::unique_ptr<ISnakeBot>> bot_controllers;
     std::vector<BotType> bot_types_;
 
@@ -131,7 +144,10 @@ private:
     std::string error_string;
 
     void spawnRabbits();
+    void spawnLazer();
 
+    void handleLazerShoot(Direction dir);
+    
     std::map<Coord, CellInfo> buildOccupiedCells();
     std::map<Coord, CellInfo> cellsCache;
     void updateCache();

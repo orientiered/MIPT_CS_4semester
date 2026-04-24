@@ -151,6 +151,13 @@ struct GraphicView::Impl {
 
     void drawRabbit(const Rabbit& rabbit);
 
+    void drawLazer(const LazerTurret &turret) {
+        sf::CircleShape sh(pixels_per_cell/2);
+        sh.setPosition(coordToScreen(turret.pos));
+        sh.setFillColor(sf::Color::Cyan);
+        window.draw(sh);
+    }
+
     void drawSnake(const Snake& snake, sf::Color body_col, sf::Color head_col) {
         if (!snake.isAlive) return;
 
@@ -298,6 +305,10 @@ struct GraphicView::Impl {
             for (int i = 0; i < model.getSnakes().size(); i++) {
                 auto snake_col = getSnakeColors(i);
                 drawSnake(model.getSnakes()[i], snake_col.first, snake_col.second);
+            }
+
+            if (model.getTurret()) {
+                drawLazer(*model.getTurret());
             }
 
             drawScores(model);

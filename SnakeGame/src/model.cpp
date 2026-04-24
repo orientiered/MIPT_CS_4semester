@@ -95,7 +95,48 @@ std::map<Coord, CellInfo> GameModel::buildOccupiedCells() {
         result[rabbit.pos] = {RabbitType, rabbit.id_};
     }
 
+    if (lazer_turret) 
+        result[lazer_turret->pos] = {LaserPickupType, 0};
+
     return result;
+}
+
+void GameModel::spawnLazer() {
+    if (lazer_turret) return;
+
+    if (rng.range(0, 1000) <= 10) {
+        int x = rng.range(0, width);
+        int y = rng.range(0, height);
+        if (checkCoord(Coord{x, y}).type == EmptyType) {
+            lazer_turret = LazerTurret({x, y});
+            cellsCache[{x,y}] = {LaserPickupType, 0};
+        }
+    }
+}
+
+
+void GameModel::handleLazerShoot(Direction dir) {
+    if (!lazer_turret) return;
+
+    Coord pos = lazer_turret->pos;
+    while (true) {
+        pos += dir;
+        CellInfo info = checkCoord(pos);
+
+        if (info.type == WallType) break;
+        switch (info.type) {
+            case SnakeHeadType:
+            case SnakeBodyType:
+            case SnakeTailType:
+                killSnakeCached(*getSnakeById(info.id));
+                break;
+            default:
+                break;
+        }
+
+    }
+
+    lazer_turret = std::nullopt;
 }
 
 
@@ -172,6 +213,7 @@ void GameModel::tickStep() {
     // updating cells cache
     // updateCache();
 
+    spawnLazer();
     spawnRabbits();
 
     // updating bots
@@ -243,6 +285,10 @@ void GameModel::tickStep() {
                 break;
             case EmptyType:
                 stepSnakeCached(snake);
+                break;
+            case LaserPickupType:
+                stepSnakeCached(snake);
+                handleLazerShoot(snake.direction);
                 break;
             case RabbitType:
                 growSnakeCached(snake);

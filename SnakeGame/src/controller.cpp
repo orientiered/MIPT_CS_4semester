@@ -1,10 +1,91 @@
 #include "controller.h"
 #include <chrono>
+#include <cmath>
 #include <iostream>
 #include <thread>
 #include <variant>
+#include <fstream>
 
 namespace sngm {
+
+void BotStats::add(Score_t score) {
+    count++;
+    sum += score;
+    sumSq += static_cast<double>(score) * score;
+
+    if (score < min) min = score;
+    if (score > max) max = score;
+
+    allScores.push_back(score);
+}
+
+double BotStats::stddev() const {
+    if (count <= 1) return 0.0;
+    double m = mean();
+    return std::sqrt((sumSq / count) - (m * m));
+}
+
+std::vector<int> BotStats::buildHistogram(int bins) const {
+        std::vector<int> hist(bins, 0);
+        if (count == 0 || bins <= 0) return hist;
+
+        double range = static_cast<double>(max - min);
+        if (range == 0) {
+            hist[0] = count;
+            return hist;
+        }
+
+        for (auto score : allScores) {
+            int index = static_cast<int>(
+                (score - min) / range * bins
+            );
+
+            if (index == bins) index = bins - 1; // крайний случай
+            hist[index]++;
+        }
+
+        return hist;
+    }
+
+void StatisticsManager::addData(const RunStats &stats) {
+    for (const auto &[score, bot] : stats) {
+        data[bot].add(score);
+    }
+}
+
+
+
+void StatisticsManager::exportStats(std::filesystem::path path) {
+    std::ofstream file(path);
+    if (!file.is_open()) return;
+
+    file << "BotType,Count,Mean,Min,Max,StdDev";
+
+        for (int i = 0; i < bins; ++i) {
+            file << ",Bin" << i;
+        }
+        file << "\n";
+
+        for (const auto &[bot, stats] : data) {
+            auto hist = stats.buildHistogram(bins);
+
+            file << botTypeToString(bot) << ","
+                 << stats.count << ","
+                 << stats.mean() << ","
+                 << stats.min << ","
+                 << stats.max << ","
+                 << stats.stddev();
+
+            for (auto h : hist) {
+                file << "," << h;
+            }
+
+            file << "\n";
+        }
+
+        file.close();
+}
+
 
 void GameController::run() {
     using namespace std::chrono_literals;
@@ -23,6 +104,7 @@ void GameController::run() {
             next_tick = current_time + tickPeriod;
 
             if (model.aliveSnakes() == 0 && tournament_mode) {
+                stat_manager.addData(model.exportScores());
                 model.restart();
             }
         }
@@ -33,6 +115,10 @@ void GameController::run() {
         }
 
         // std::this_thread::sleep_until(std::min(next_render, next_tick));
+    }
+
+    if (tournament_mode) {
+        stat_manager.exportStats(STATS_PATH);
     }
 
 

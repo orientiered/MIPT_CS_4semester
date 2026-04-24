@@ -264,6 +264,18 @@ size_t GameModel::aliveSnakes() {
     return result;
 }
 
+std::vector<std::pair<Score_t, BotType>> GameModel::exportScores() const {
+    // TODO: wont work for game with players
+    std::vector<std::pair<Score_t, BotType>> result(snakes.size());
+    for (int i = 0; i < snakes.size(); i++) {
+
+        result[i] = {getScore(snakes[i].id_), bot_types_[i]};
+    }
+
+    return result;
+}
+
+
 bool GameModel::isValid() const {
     return isValidSize;
 }

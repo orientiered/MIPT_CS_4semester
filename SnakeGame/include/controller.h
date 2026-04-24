@@ -4,10 +4,46 @@
 #include "model.h"
 #include "view.h"
 #include <chrono>
+#include <filesystem>
 
 namespace sngm {
 
 using namespace std::chrono_literals;
+
+static inline std::filesystem::path STATS_PATH = "stats.csv";
+
+struct BotStats {
+    int count = 0;
+    double sum = 0.0;
+    double sumSq = 0.0;
+    Score_t min = std::numeric_limits<Score_t>::max();
+    Score_t max = std::numeric_limits<Score_t>::min();
+
+    std::vector<Score_t> allScores;
+
+    void add(Score_t score);
+
+    double mean() const {
+        return count ? sum / count : 0.0;
+    }
+
+    double stddev() const;
+
+    std::vector<int> buildHistogram(int bins) const;
+
+};
+
+class StatisticsManager {
+private:
+    std::map<BotType, BotStats> data;
+    int bins;
+public:
+    explicit StatisticsManager(int histogramBins = 10)
+        : bins(histogramBins) {}
+        
+    void exportStats(std::filesystem::path path);
+    void addData(const RunStats &stats);
+};
 
 class GameController {
 private:
@@ -27,6 +63,7 @@ private:
     bool is_paused = false;
     bool exit_request = false;
 
+    StatisticsManager stat_manager;
     bool tournament_mode = false;
 
 public:

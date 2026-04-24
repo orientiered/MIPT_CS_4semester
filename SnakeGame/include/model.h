@@ -42,7 +42,17 @@ enum BotType {
     SNAKE_BOT_MEDIUM
 };
 
+static inline std::string botTypeToString(BotType bot) {
+    switch (bot) {
+        case SNAKE_BOT_DUMB:   return "DUMB";
+        case SNAKE_BOT_MEDIUM: return "MEDIUM";
+        default:               return "UNKNOWN";
+    }
+}
+
 using Score_t = int;
+
+using RunStats = std::vector<std::pair<Score_t, BotType>>;
 
 class GameModel {
 public:
@@ -100,6 +110,8 @@ public:
         return {};
     }  
 
+    RunStats exportScores() const;
+
     const Score_t scorePerRabbit = 10;
     const Score_t scorePerKill = 30;
 private:
@@ -124,7 +136,7 @@ private:
     void killSnakeCached(Snake &s);
     void stepSnakeCached(Snake &s);
     void growSnakeCached(Snake &s);
-    
+
     Snake& spawnDefaultSnake(Coord offset, Direction dir = Direction::RIGHT);
 
     template <typename SnakeBotT>

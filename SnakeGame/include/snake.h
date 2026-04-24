@@ -23,7 +23,8 @@ public:
     std::string name = "snake";
 
     bool isAlive = true;
-
+    bool will_grow = false;
+    
     // TODO: check opposite direction based on previous segment
     void setDirection(Direction new_dir) {
         if (isAlive && !isOppositeDirection(direction, new_dir))

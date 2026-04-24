@@ -1,3 +1,4 @@
+#include <cassert>
 #include <iostream>
 #include <string>
 
@@ -40,14 +41,20 @@ GameModel::GameModel(int32_t width_, int32_t height_, uint16_t spawn_controlled,
     }
 
 }
+
 //
+
+void GameModel::updateCache() {
+    cellsCache = buildOccupiedCells();
+}
+
 CellInfo GameModel::checkCoord(Coord pos, bool update_cache) {
     //TODO:
     if (pos.x < 0 || pos.x >= width || pos.y < 0 || pos.y >= height) {
         return {WallType, 0};
     }
 
-    if (update_cache) cellsCache = buildOccupiedCells();
+    if (update_cache) updateCache();
 
     auto cellIt = cellsCache.find(pos);
     if (cellIt == cellsCache.end()) return {EmptyType, 0};
@@ -67,6 +74,8 @@ std::map<Coord, CellInfo> GameModel::buildOccupiedCells() {
             result[*it] = {SnakeBodyType, snake.id_};
             it++;
         }
+
+        result[snake.body.back()] = {SnakeTailType, snake.id_}; // overwriting tail
     }
 
     for (const Rabbit &rabbit: rabbits) {
@@ -128,7 +137,7 @@ void GameModel::tickStep() {
     }
 
     // updating cells cache
-    checkCoord({0, 0}, true);
+    updateCache();
 
     spawnRabbits();
 
@@ -137,18 +146,67 @@ void GameModel::tickStep() {
         snake_bot->tick(*this);
     }
 
+    std::map<Coord, std::vector<SnakeId>> planned_heads;
+    
+    // Phase 1: calculating new head positions
+    for (Snake& snake: snakes) {
+        if (!snake.isAlive) continue;
+        snake.will_grow = false;
+
+        Coord next_cell = snake.getNextCell();
+        switch (checkCoord(next_cell).type) {
+            case WallType:
+                snake.kill(); 
+                break;
+            case RabbitType:
+                snake.will_grow = true; // wants to grow
+            default:
+                planned_heads[next_cell].push_back(snake.id_);
+                break;
+        }
+    }
+
+    // Phase 2: Killing all snakes that will collide WITH HEADS
+    for (auto& [coord, ids]: planned_heads) {
+        if (ids.size() > 1) {
+            for (SnakeId id : ids) {
+                Snake * s= getSnakeById(id);
+                s->kill();
+            }
+
+        }
+    }
+
+    // updating cache
+    updateCache();
+
+    // Phase 3: resolving other conflicts and moving snakes
     for (Snake& snake: snakes) {
         if (!snake.isAlive) continue;
         Coord nextCell = snake.getNextCell();
-        CellInfo cell_info = checkCoord(nextCell);
+        CellInfo next_cell_info = checkCoord(nextCell);
 
-        switch(cell_info.type) {
+        SnakeId other_id = next_cell_info.id;
+        bool other_is_not_me = other_id != snake.id_;
+
+        // Processing next cell
+        switch(next_cell_info.type) {
+            case SnakeTailType: 
+            {
+                Snake *other = getSnakeById(other_id);
+                if (other->will_grow) {
+                    snake.kill();
+                    score[other_id] += scorePerKill * other_is_not_me;
+                } else {
+                    snake.step();
+                }
+            }
+            break;
             case SnakeBodyType:
-                snake.kill();
-                if (cell_info.id != snake.id_)
-                    score[cell_info.id] += scorePerKill;
-                break;
             case SnakeHeadType:
+                snake.kill();
+                score[other_id] += scorePerKill * other_is_not_me;
+                break;
             case WallType:
                 snake.kill();
                 break;

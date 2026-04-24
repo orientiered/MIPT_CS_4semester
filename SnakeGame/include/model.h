@@ -17,7 +17,7 @@
 namespace sngm {
 
 //EmptyType must be zero for default construction
-enum CellType {EmptyType = 0, SnakeBodyType, SnakeHeadType, RabbitType, WallType};
+enum CellType {EmptyType = 0, SnakeBodyType, SnakeHeadType, SnakeTailType, RabbitType, WallType};
 
 struct CellInfo {
     CellType type;
@@ -114,6 +114,7 @@ private:
 
     std::map<Coord, CellInfo> buildOccupiedCells();
     std::map<Coord, CellInfo> cellsCache;
+    void updateCache();
 
     void kill_rabbit(Coord c);
 

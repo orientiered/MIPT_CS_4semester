@@ -20,7 +20,7 @@ namespace sngm {
 
 /* =================== Terminal window size change handler ==================== */
 
-static bool g_has_window_changed = false; // used in pollEvent
+static bool g_has_window_changed = true; // used in pollEvent
 
 static void sigWinchHandler(int sig) {
     g_has_window_changed = true;
@@ -70,7 +70,6 @@ struct AsciiView::Impl {
 
     int field_width = tty_width - width_bound, field_height = tty_height - height_bound;
     int field_start_x = 1, field_start_y = 1;
-
 
     const std::vector<int> snakePalette{112, 133, 172, 196, 27, 12, 215};
     ColorPalettePicker<int> snakeColor;
@@ -133,11 +132,14 @@ struct AsciiView::Impl {
     void drawBox();
     void drawMiddleText(const char *text);
     void drawSnake(const Snake& snake);
+    void drawLazer(const LazerTurret& turret);
+    void drawLazerShoot(Coord pos, Direction dir);
+
     void drawRabbit(const Rabbit& rabbit);
 
     ~Impl() {
-        showCursor();
         tcsetattr(STDIN_FILENO, TCSANOW, &old_tty_attr);
+        showCursor();
     }
 };
 
@@ -267,7 +269,22 @@ void AsciiView::Impl::drawRabbit(const Rabbit& rabbit) {
     // printf("*");
 }
 
+void AsciiView::Impl::drawLazer(const LazerTurret& turret) {
+    setFgColor(220);
 
+    gotoFieldXY(turret.pos.x, turret.pos.y);
+    printf("š");
+}
+
+
+void AsciiView::Impl::drawLazerShoot(Coord pos, Direction dir) {
+    setFgColor(63);
+    while (pos.x < field_width && pos.y < field_height && pos.x >= 0 && pos.y >= 0) {
+        gotoFieldXY(pos.x, pos.y);
+        printf("█");
+        pos += dir;
+    }
+}
 
 void AsciiView::render(const GameModel& model) {
     impl_->clearScreen();
@@ -282,6 +299,14 @@ void AsciiView::render(const GameModel& model) {
 
         for (const Rabbit& rabbit: model.getRabbits()) {
             impl_->drawRabbit(rabbit);
+        }
+
+        if (model.getTurret()) {
+            impl_->drawLazer(*model.getTurret());
+        }
+
+        if (model.lazer_shoot.tick > 0) {
+            impl_->drawLazerShoot(model.lazer_shoot.shoot_pos, model.lazer_shoot.shoot_dir);
         }
 
     } else {

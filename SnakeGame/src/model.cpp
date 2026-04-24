@@ -51,6 +51,7 @@ void GameModel::restart() {
         }
     }
 
+    updateCache();
 }
 
 //
@@ -139,6 +140,26 @@ Rabbit* GameModel::getRabbitById(int64_t id) {
 }
 
 
+void GameModel::killSnakeCached(Snake &s) {
+    s.kill();
+    for (Coord c: s.body) {
+        cellsCache.erase(c); 
+    }
+}
+
+void GameModel::stepSnakeCached(Snake &s) {
+    cellsCache.erase(s.body.back());
+    s.step();
+    cellsCache[s.body.back()] = {SnakeTailType, s.id_};
+    cellsCache[s.body.front()] = {SnakeHeadType, s.id_};
+}
+
+void GameModel::growSnakeCached(Snake &s) {
+    cellsCache[s.body.front()] = {SnakeBodyType, s.id_};
+    s.grow();
+    cellsCache[s.body.front()] = {SnakeHeadType, s.id_};
+}
+
 void GameModel::tickStep() {
     if (!isValid()) return;
 
@@ -148,7 +169,7 @@ void GameModel::tickStep() {
     }
 
     // updating cells cache
-    updateCache();
+    // updateCache();
 
     spawnRabbits();
 
@@ -167,7 +188,7 @@ void GameModel::tickStep() {
         Coord next_cell = snake.getNextCell();
         switch (checkCoord(next_cell).type) {
             case WallType:
-                snake.kill(); 
+                killSnakeCached(snake);
                 break;
             case RabbitType:
                 snake.will_grow = true; // wants to grow
@@ -182,14 +203,12 @@ void GameModel::tickStep() {
         if (ids.size() > 1) {
             for (SnakeId id : ids) {
                 Snake * s= getSnakeById(id);
-                s->kill();
+                killSnakeCached(*s);
             }
 
         }
     }
 
-    // updating cache
-    updateCache();
 
     // Phase 3: resolving other conflicts and moving snakes
     for (Snake& snake: snakes) {
@@ -206,28 +225,28 @@ void GameModel::tickStep() {
             {
                 Snake *other = getSnakeById(other_id);
                 if (other->will_grow) {
-                    snake.kill();
+                    killSnakeCached(snake);
                     score[other_id] += scorePerKill * other_is_not_me;
                 } else {
-                    snake.step();
+                    stepSnakeCached(snake);
                 }
             }
             break;
             case SnakeBodyType:
             case SnakeHeadType:
-                snake.kill();
+                killSnakeCached(snake);
                 score[other_id] += scorePerKill * other_is_not_me;
                 break;
             case WallType:
-                snake.kill();
+                killSnakeCached(snake);
                 break;
             case EmptyType:
-                snake.step();
+                stepSnakeCached(snake);
                 break;
             case RabbitType:
-                snake.grow();
+                growSnakeCached(snake);
                 score[snake.id_] += scorePerRabbit;
-                kill_rabbit(nextCell);
+                kill_rabbit(nextCell); // rabbit cache is overwritten by growing snake
                 break;
             default:
                 break;

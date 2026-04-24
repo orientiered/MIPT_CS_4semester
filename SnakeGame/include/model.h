@@ -120,7 +120,11 @@ private:
     void updateCache();
 
     void kill_rabbit(Coord c);
-
+    /// update cache after action
+    void killSnakeCached(Snake &s);
+    void stepSnakeCached(Snake &s);
+    void growSnakeCached(Snake &s);
+    
     Snake& spawnDefaultSnake(Coord offset, Direction dir = Direction::RIGHT);
 
     template <typename SnakeBotT>

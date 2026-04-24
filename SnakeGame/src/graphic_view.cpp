@@ -46,16 +46,19 @@ static sf::Color hsv(int hue, float sat, float val) {
 }
 
 
-struct SnakeSprites {
+struct SpriteManager {
     sf::Sprite linear;
     sf::Sprite turn;
     sf::Sprite tail;
     sf::Sprite head;
 
+    sf::Sprite rabbit;
+
     int sprite_size = 255;
 
-    SnakeSprites(sf::Texture &atlas): 
-        linear(atlas), tail(atlas), turn(atlas), head(atlas) {
+    SpriteManager(sf::Texture &atlas): 
+        linear(atlas), tail(atlas), turn(atlas), head(atlas),
+        rabbit(atlas) {
                 
         sf::Vector2i pos(0,0);
 
@@ -82,6 +85,10 @@ struct SnakeSprites {
         sf::Vector2i head_size(786-529, 334);
         setRectAndOrigin(head, head_size);
 
+        pos = {0, 256};
+        sf::Vector2i rabbit_size(202, 256);
+        setRectAndOrigin(rabbit, rabbit_size);
+
     }
 };
 
@@ -96,12 +103,12 @@ struct GraphicView::Impl {
 
     sf::Texture atlas;
 
-    SnakeSprites snake_sprites;
+    SpriteManager sprites;
 
     bool initial_resize = true;
 
     Impl(uint32_t screen_width, uint32_t screen_height ):
-        snake_sprites(atlas) 
+        sprites(atlas) 
     {
         window.create(sf::VideoMode( { screen_width, screen_height } ), "Snake game!" );
 
@@ -150,8 +157,8 @@ struct GraphicView::Impl {
         Coord prev_coord;
         Coord next_coord = snake.body.front();
 
-        sf::Sprite* segment = &snake_sprites.head;
-        float scale = pixels_per_cell / snake_sprites.sprite_size;
+        sf::Sprite* segment = &sprites.head;
+        float scale = pixels_per_cell / sprites.sprite_size;
 
         auto snake_it = snake.body.begin();
         int snake_size = snake.body.size();
@@ -178,7 +185,7 @@ struct GraphicView::Impl {
                 continue; // head must be drawn last
             } else if (i == (snake_size - 1)) {
                 //tail
-                segment = &snake_sprites.tail;
+                segment = &sprites.tail;
                 rotation =  (dif1.x > 0) ? -90 :
                             (dif1.x < 0) ? +90 :
                             (dif1.y > 0) ? +180 : 
@@ -186,11 +193,11 @@ struct GraphicView::Impl {
 
             } else if (dif1 == dif2) {
                 // linear
-                segment = &snake_sprites.linear;
+                segment = &sprites.linear;
                 rotation = (dif1.x == 0) ? 0 : 90;
             } else {
                 // turn
-                segment = &snake_sprites.turn;
+                segment = &sprites.turn;
                 bool l = (dif1.x > 0) || (dif2.x < 0),
                         r = (dif1.x < 0) || (dif2.x > 0),
                         u = (dif1.y < 0) || (dif2.y > 0),
@@ -211,7 +218,7 @@ struct GraphicView::Impl {
             window.draw(*segment);
         }
 
-        segment = &snake_sprites.head;
+        segment = &sprites.head;
         segment->setColor(head_col);
         segment->setRotation(sf::degrees(180) + sf::degrees(directionToDegree(snake.direction)));
         segment->setScale({scale, scale});
@@ -223,12 +230,25 @@ struct GraphicView::Impl {
 
     }
 
-    // color palette from 0 to snake_palette_len - 1
-    const int snake_palette_len = 10; 
-    std::pair<sf::Color, sf::Color> getSnakeColors(int i) {
+    const float GOLDEN_ANGLE = 137.508f; // лучше, чем 360/10
 
-        return {hsv(360 * i / snake_palette_len, 0.8, 0.5),
-               hsv(360 * i / snake_palette_len, 0.8, 0.7)};    
+    std::pair<sf::Color, sf::Color> getSnakeColors(int i) {
+        // Золотой угол даёт максимальное визуальное разнообразие
+        float hue = std::fmod(i * GOLDEN_ANGLE, 360.f);
+        
+        // Чередование яркости для лучшего контраста между змейками
+        float brightness = (i % 2 == 0) ? 0.55f : 0.75f;
+        float head_brightness = std::min(brightness + 0.15f, 0.95f);
+        
+        // Избегаем "слепых зон": чисто зелёный и серый
+        if (hue > 80 && hue < 150) {
+            hue = (hue < 115) ? 80 : 150; // сдвигаем из зелёной зоны
+        }
+        
+        return {
+            hsv(hue, 0.85f, brightness),
+            hsv(hue, 0.95f, head_brightness) // голова: насыщеннее и светлее
+        };
     }
 
     void drawScores(const GameModel& model) {
@@ -346,11 +366,11 @@ struct GraphicView::Impl {
 };
 
 void GraphicView::Impl::drawRabbit(const Rabbit& rabbit) {
-    sf::CircleShape rab_shape(pixels_per_cell/2);
-    rab_shape.setFillColor(sf::Color::Red);
-    rab_shape.setPosition(coordToScreen(rabbit.pos));
-
-    window.draw(rab_shape);
+    // rab_shape.setFillColor(sf::Color::Red);
+    sprites.rabbit.setPosition(coordToScreenCentered(rabbit.pos));
+    float scale = pixels_per_cell / sprites.sprite_size * 1.2;
+    sprites.rabbit.setScale({scale, scale});
+    window.draw(sprites.rabbit);
 }
 
 void GraphicView::render(const GameModel& model) {

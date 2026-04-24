@@ -40,7 +40,7 @@ private:
 public:
     explicit StatisticsManager(int histogramBins = 10)
         : bins(histogramBins) {}
-        
+
     void exportStats(std::filesystem::path path);
     void addData(const RunStats &stats);
 };
@@ -67,10 +67,14 @@ private:
     bool tournament_mode = false;
 
 public:
+    void setTickPeriod(std::chrono::milliseconds period) {
+        tickPeriod = std::max(period, 5ms);
+    }
+
     GameController(GameModel& _model, IView& _view, bool tournament):
         model(_model), view(_view), tournament_mode(tournament) {
             if (tournament_mode) {
-                tickPeriod = 5ms;
+                setTickPeriod(5ms);
             }
 
             next_tick = clock.now();

@@ -30,6 +30,9 @@ int main(int argc, const char *argv[]) {
     bool tournament_mode = false;
     arg_parser.add_flag("--tournament", tournament_mode, "Tournament mode: run multiple games");
 
+    int tick_period = 200;
+    arg_parser.add_option("--tick-period", tick_period, "Game tick period in ms");
+
     CLI11_PARSE(arg_parser, argc, argv);
 
     if (player_count < 0) {
@@ -55,12 +58,14 @@ int main(int argc, const char *argv[]) {
         sngm::AsciiView view;
         sngm::GameController controller(model, view, tournament_mode);
 
+        controller.setTickPeriod(std::chrono::milliseconds(tick_period));
         controller.run();
 
     } else {
         sngm::GraphicView view;
         sngm::GameController controller(model, view, tournament_mode);
 
+        controller.setTickPeriod(std::chrono::milliseconds(tick_period));
         controller.run();
     }
 

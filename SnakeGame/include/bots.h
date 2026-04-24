@@ -3,6 +3,7 @@
 #include "model.h"
 #include <algorithm>
 #include <limits>
+#include <random>
 
 namespace sngm {
 
@@ -25,29 +26,42 @@ inline const Rabbit* intuitive_getTarget(const Coord center, const GameModel &mo
     return target;
 }
 
-// TODO: randomize direction if it has 2 possible directions
-inline Direction intuitive_offsetToDirection(Coord offset, Direction cur_dir) {
-    Direction new_dir_x = (offset.x > 0) ? Direction::RIGHT :
-                            (offset.x < 0) ? Direction::LEFT : Direction::NONE;
 
-    Direction new_dir_y = (offset.y > 0) ? Direction::UP :
-                            (offset.y < 0) ? Direction::DOWN : Direction::NONE;
+inline Direction intuitive_offsetToDirection(
+    Coord offset,
+    Direction cur_dir
+) {
+    static std::mt19937 rng(std::random_device{}());
 
+    std::vector<Direction> candidates;
 
-    Direction new_dir = Direction::NONE;
-    if (new_dir_x != Direction::NONE && !isOppositeDirection(new_dir_x, cur_dir)) {
-        new_dir = new_dir_x;
-    } else if (new_dir_y != Direction::NONE && !isOppositeDirection(new_dir_y, cur_dir)) {
-        new_dir = new_dir_y;
-    } else {
-        if (new_dir_x != Direction::NONE)
-            new_dir = directionRotate90(new_dir_x);
-        else
-            new_dir = directionRotate90(new_dir_y);
+    Direction dx = (offset.x > 0) ? Direction::RIGHT :
+                   (offset.x < 0) ? Direction::LEFT : Direction::NONE;
+
+    Direction dy = (offset.y > 0) ? Direction::UP :
+                   (offset.y < 0) ? Direction::DOWN : Direction::NONE;
+
+    if (dx != Direction::NONE && !isOppositeDirection(dx, cur_dir))
+        candidates.push_back(dx);
+
+    if (dy != Direction::NONE && !isOppositeDirection(dy, cur_dir))
+        candidates.push_back(dy);
+
+    // Choosing random appropriate direction
+    if (!candidates.empty()) {
+        std::uniform_int_distribution<> dist(0, candidates.size() - 1);
+        return candidates[dist(rng)];
     }
 
-    return new_dir;
+    // fallback 
+    if (dx != Direction::NONE)
+        return directionRotate90(dx);
+    if (dy != Direction::NONE)
+        return directionRotate90(dy);
+
+    return cur_dir;
 }
+
 
 class SnakeBot_Intuitive : public ISnakeBot {
 public:
